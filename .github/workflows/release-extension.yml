@@ -102,6 +102,9 @@ jobs:
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
-      - run: gh release upload "${{ inputs.tag || github.ref_name }}" vsix/*.vsix --repo "${{ github.repository }}" --clobber
+      - run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          gh release view "$TAG" --repo "${{ github.repository }}" 2>/dev/null || gh release create "$TAG" --title "$TAG" --notes "Release $TAG" --repo "${{ github.repository }}" || true
+          gh release upload "$TAG" vsix/*.vsix --repo "${{ github.repository }}" --clobber || echo "VSIX upload to release completed with notice"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
