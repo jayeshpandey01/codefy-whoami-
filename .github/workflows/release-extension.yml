@@ -44,6 +44,11 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libsecret-1-dev libx11-dev libxkbfile-dev
+
       - name: Install dependencies (target platform binaries)
         run: >
           pnpm install --frozen-lockfile
