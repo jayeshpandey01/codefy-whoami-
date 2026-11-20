@@ -152,7 +152,6 @@ export function Popover({
       document.removeEventListener("mousedown", onPointerDown);
     };
     // focusFirst is read once on open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, escape, close]);
 
   const triggerElement = trigger({

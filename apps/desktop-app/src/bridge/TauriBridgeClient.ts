@@ -9,7 +9,6 @@ import {
   type DastStreamLogData,
   type DastStreamFindingData,
   type DastStreamCompleteData,
-  VercelError,
   toStructuredError,
 } from "@whoami/types";
 import {
@@ -19,7 +18,6 @@ import {
   DEFAULT_SAST_SERVICE_URL,
   DEFAULT_DAST_SERVICE_URL,
   DEFAULT_AUTH_SERVICE_URL,
-  DEFAULT_CODEFY_JWT,
   ScanOrchestratorClient,
   handleOrchestratorMessage,
 } from "@whoami/core/query";

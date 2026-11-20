@@ -35,6 +35,12 @@ export default [
     },
   },
   {
+    files: ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
+  {
     // Keeps the ast-grep napi/wasm dual-build boundary honest: nothing outside
     // packages/core/src/ast-grep/ may import an adapter file directly — everyone
     // else must go through the #ast-grep-adapter subpath import.

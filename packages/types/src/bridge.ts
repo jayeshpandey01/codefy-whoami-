@@ -16,7 +16,6 @@ import type {
 } from "./orchestrator.js";
 import type { AuthSession, DeveloperApiKey, RuleToggleConfig, UserAccount } from "./persistence.js";
 import type {
-  AuditEventsListResponse,
   CanonicalIssue,
   CanonicalIssueDetailResponse,
   DastExportFormat,

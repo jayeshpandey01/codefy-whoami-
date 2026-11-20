@@ -61,13 +61,10 @@ import {
   ShieldAlertIcon,
   UpdateBanner,
   ShieldCheckIcon,
-  XIcon,
 } from "@whoami/ui";
 import {
   HostedLlmClient,
   GatewayAuthClient,
-  runChatQuery,
-  DEFAULT_ORCHESTRATOR_URL,
   DEFAULT_AUTH_SERVICE_URL,
   DEFAULT_AI_GATEWAY_URL,
   DEFAULT_OPERATOR_API_KEY,
@@ -84,7 +81,6 @@ import {
   getAuthSession,
   getPreference,
   getScanSessionWithFindings,
-  getSecurityTips,
   getSettings,
   listScanSessions,
   saveAccount,

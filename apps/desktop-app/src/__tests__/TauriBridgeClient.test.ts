@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { BridgeMessage } from "@whoami/types";
+import type { BridgeMessage, DastStreamHandlers } from "@whoami/types";
 
 const tauriFetch = vi.fn();
 const authSession = {
@@ -80,7 +80,9 @@ describe("TauriBridgeClient orchestrator requests", () => {
     } as unknown as BridgeMessage);
 
     expect(regRes.type).toBe("register-target-result");
-    expect((regRes as any).target?.value).toBe("example.com");
+    if (regRes.type === "register-target-result") {
+      expect(regRes.target?.value).toBe("example.com");
+    }
 
     const auditRes = await bridge.request<BridgeMessage, BridgeMessage>({
       type: "list-audit-events-request",
@@ -140,8 +142,10 @@ describe("TauriBridgeClient orchestrator requests", () => {
     } as BridgeMessage);
 
     expect(res.type).toBe("validate-dast-target-result");
-    expect((res as any).valid).toBe(true);
-    expect((res as any).targetUrl).toBe("https://example.com");
+    if (res.type === "validate-dast-target-result") {
+      expect(res.valid).toBe(true);
+      expect(res.targetUrl).toBe("https://example.com");
+    }
     expect(tauriFetch).toHaveBeenCalledOnce();
     const [url] = tauriFetch.mock.calls[0]!;
     expect(String(url)).toContain("/v1/dast/validate-target");
@@ -163,8 +167,10 @@ describe("TauriBridgeClient orchestrator requests", () => {
     } as BridgeMessage);
 
     expect(res.type).toBe("list-dast-tools-result");
-    expect((res as any).tools).toHaveLength(2);
-    expect((res as any).tools[0].id).toBe("zap");
+    if (res.type === "list-dast-tools-result") {
+      expect(res.tools).toHaveLength(2);
+      expect(res.tools?.[0]?.id).toBe("zap");
+    }
     expect(tauriFetch).toHaveBeenCalledOnce();
     const [url] = tauriFetch.mock.calls[0]!;
     expect(String(url)).toMatch(/\/v1\/(tools|dast\/tools)/);
@@ -187,9 +193,11 @@ describe("TauriBridgeClient orchestrator requests", () => {
     } as BridgeMessage);
 
     expect(res.type).toBe("export-dast-job-result");
-    expect((res as any).jobId).toBe("dast-job-42");
-    expect((res as any).format).toBe("sarif");
-    expect((res as any).data).toHaveProperty("version", "2.1.0");
+    if (res.type === "export-dast-job-result") {
+      expect(res.jobId).toBe("dast-job-42");
+      expect(res.format).toBe("sarif");
+      expect(res.data).toHaveProperty("version", "2.1.0");
+    }
     expect(tauriFetch).toHaveBeenCalledOnce();
     const [url] = tauriFetch.mock.calls[0]!;
     expect(String(url)).toContain("/v1/jobs/dast-job-42/export?format=sarif");
@@ -197,18 +205,24 @@ describe("TauriBridgeClient orchestrator requests", () => {
 
   it("wires up streaming bridge messages from DastClient SSE stream to forward dast-stream-* events", async () => {
     const bridge = new TauriBridgeClient();
-    const client = await (bridge as any).createOrchestratorClient();
+    const client = await (
+      bridge as unknown as {
+        createOrchestratorClient: () => Promise<{
+          dast: { streamJobEvents: (jobId: string, handlers: DastStreamHandlers) => () => void };
+        }>;
+      }
+    ).createOrchestratorClient();
 
-    let capturedHandlers: any;
+    let capturedHandlers: DastStreamHandlers | undefined;
     const streamSpy = vi.spyOn(client.dast, "streamJobEvents").mockImplementation((_jobId, handlers) => {
       capturedHandlers = handlers;
       return () => {};
     });
 
-    const statusEvents: any[] = [];
-    const logEvents: any[] = [];
-    const findingEvents: any[] = [];
-    const completeEvents: any[] = [];
+    const statusEvents: BridgeMessage[] = [];
+    const logEvents: BridgeMessage[] = [];
+    const findingEvents: BridgeMessage[] = [];
+    const completeEvents: BridgeMessage[] = [];
 
     bridge.on("dast-stream-status", (m) => statusEvents.push(m));
     bridge.on("dast-stream-log", (m) => logEvents.push(m));
@@ -224,7 +238,7 @@ describe("TauriBridgeClient orchestrator requests", () => {
     expect(capturedHandlers).toBeDefined();
 
     // Trigger status event
-    capturedHandlers.onStatus({
+    capturedHandlers!.onStatus?.({
       job_id: "job-sse-test",
       status: "running",
       progress_percent: 50,
@@ -241,7 +255,7 @@ describe("TauriBridgeClient orchestrator requests", () => {
     });
 
     // Trigger log event
-    capturedHandlers.onLog({
+    capturedHandlers!.onLog?.({
       timestamp: "2026-11-14T00:00:00Z",
       message: "Testing target parameter id",
       tool: "sqlmap",
@@ -255,7 +269,7 @@ describe("TauriBridgeClient orchestrator requests", () => {
     });
 
     // Trigger finding event
-    capturedHandlers.onFinding({
+    capturedHandlers!.onFinding?.({
       tool_name: "sqlmap",
       title: "Boolean-based blind SQL injection",
       severity: "HIGH",
@@ -272,7 +286,7 @@ describe("TauriBridgeClient orchestrator requests", () => {
     });
 
     // Trigger complete event
-    capturedHandlers.onComplete({
+    capturedHandlers!.onComplete?.({
       status: "completed",
       total_findings: 1,
       duration_ms: 3500,

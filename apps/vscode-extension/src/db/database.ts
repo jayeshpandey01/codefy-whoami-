@@ -58,7 +58,6 @@ let bridgeClient: BridgeClient | null = null;
 let cache: PersistedBlob | null = null;
 let loadPromise: Promise<PersistedBlob> | null = null;
 let requestCounter = 0;
-let flushScheduled = false;
 
 /**
  * Must be called once at module load (see webview/main.tsx, right after

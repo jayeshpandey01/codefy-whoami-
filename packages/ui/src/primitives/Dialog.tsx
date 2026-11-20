@@ -103,7 +103,6 @@ export function Dialog({
       if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus();
     };
     // initialFocusRef is read once on open by design.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, handleEscape]);
 
   if (!open || typeof document === "undefined") return null;

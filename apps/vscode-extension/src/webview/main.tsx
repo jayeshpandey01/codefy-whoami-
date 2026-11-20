@@ -9,7 +9,6 @@ import {
 import { createRoot } from "react-dom/client";
 import type {
   AllScanProfile,
-  AuditEventRead,
   AuthSession,
   BridgeMessage,
   ChatGraphViewMode,
@@ -29,7 +28,6 @@ import type {
   UserAccount,
   UserSettings,
   WorkspaceGraph,
-  WorkspaceGraphNode,
 } from "@whoami/types";
 import { deduplicateFindings, toStructuredError, isSastProfile, isDastFinding } from "@whoami/types";
 import {
@@ -66,14 +64,12 @@ import {
   RemoteScanIcon,
   ShieldAlertIcon,
   ShieldCheckIcon,
-  XIcon,
 } from "@whoami/ui";
 import "@whoami/ui/styles.css";
 import {
   HostedLlmClient,
   DEFAULT_AI_GATEWAY_URL,
   DEFAULT_OPERATOR_API_KEY,
-  runChatQuery,
   parseSlashCommand,
   executeSlashCommand,
   executeUnknownSlashCommand,
@@ -1023,15 +1019,6 @@ function App(): ReactElement {
       }
     },
     [findings],
-  );
-
-  const handleTreeNodeClick = useCallback(
-    (node: WorkspaceGraphNode) => {
-      if (node.filePath) {
-        handleJumpToLine(node.filePath, node.line ?? 1);
-      }
-    },
-    [handleJumpToLine],
   );
 
   // Orchestrator Bridge Helpers

@@ -106,12 +106,20 @@ export function generateDastSarif(
 
   for (let i = 0; i < findings.length; i++) {
     const f = findings[i]!;
-    const item = f as Record<string, any>;
+    const item = f as unknown as Record<string, unknown>;
+    const code = typeof item["code"] === "string" ? item["code"] : "";
+    const templateId = typeof item["template_id"] === "string" ? item["template_id"] : "";
+    const severity = typeof item["severity"] === "string" ? item["severity"] : "";
+    const title = typeof item["title"] === "string" ? item["title"] : "";
+    const description = typeof item["description"] === "string" ? item["description"] : "";
+    const matchedAt = typeof item["matched_at"] === "string" ? item["matched_at"] : "";
+    const host = typeof item["host"] === "string" ? item["host"] : "";
+
     const ruleId =
-      item.code ||
-      item.template_id ||
-      `DAST-${item.severity?.toUpperCase() || "INFO"}-${i}`;
-    const rawSev = item.severity?.toLowerCase();
+      code ||
+      templateId ||
+      `DAST-${severity.toUpperCase() || "INFO"}-${i}`;
+    const rawSev = severity.toLowerCase();
     const level =
       rawSev === "critical" || rawSev === "high" || rawSev === "error"
         ? "error"
@@ -122,8 +130,8 @@ export function generateDastSarif(
     if (!rulesMap.has(ruleId)) {
       rulesMap.set(ruleId, {
         id: ruleId,
-        name: item.title,
-        shortDescription: { text: item.title },
+        name: title,
+        shortDescription: { text: title },
         defaultConfiguration: { level },
       });
     }
@@ -131,21 +139,21 @@ export function generateDastSarif(
     sarifResults.push({
       ruleId,
       level,
-      message: { text: item.description || item.title },
+      message: { text: description || title },
       locations: [
         {
           physicalLocation: {
             artifactLocation: {
-              uri: item.matched_at || item.host || scan.target_id || "target",
+              uri: matchedAt || host || scan.target_id || "target",
             },
             region: { startLine: 1 },
           },
         },
       ],
       properties: {
-        severity: item.severity,
-        cwe: item.cwe,
-        remediation: item.remediation,
+        severity: item["severity"],
+        cwe: item["cwe"],
+        remediation: item["remediation"],
       },
     });
   }

@@ -1,12 +1,9 @@
 import * as vscode from "vscode";
 import {
   DEFAULT_ORCHESTRATOR_URL,
-  DEFAULT_OPERATOR_API_KEY,
-  DEFAULT_ADMIN_API_KEY,
   DEFAULT_SAST_SERVICE_URL,
   DEFAULT_DAST_SERVICE_URL,
   DEFAULT_AUTH_SERVICE_URL,
-  DEFAULT_CODEFY_JWT,
   GatewayAuthClient,
   ScanOrchestratorClient,
   handleOrchestratorMessage,
