@@ -1,0 +1,107 @@
+{
+  "job_id": "job_c4c9eb440d85",
+  "target_id": null,
+  "mode": "passive",
+  "status": "completed",
+  "summary": {
+    "total_findings": 4,
+    "critical": 2,
+    "high": 2,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  },
+  "created_at": "2026-11-20T16:35:53+00:00",
+  "completed_at": "2026-11-20T16:36:48+00:00",
+  "expires_at": "2026-11-21T16:35:53+00:00",
+  "duration_ms": 0,
+  "error_message": null,
+  "terminal_output": null,
+  "tool_errors": {},
+  "findings": [
+    {
+      "id": null,
+      "fingerprint": "4696fa8261a24888fd8f65f6c64c0d702938c2d94d4dcf08fe4722795248bfff",
+      "tool_name": "semgrep",
+      "vulnerability_id": "javascript.lang.security.detect-child-process.detect-child-process",
+      "title": "Detected calls to child_process from a function argument `req`. This could lead to a command injection if the input is u",
+      "severity": "CRITICAL",
+      "file_path": "src/routes/exports.ts",
+      "line_start": 10,
+      "line_end": 10,
+      "snippet": "requires login",
+      "description": "Detected calls to child_process from a function argument `req`. This could lead to a command injection if the input is user controllable. Try to avoid calls to child_process, and if it is needed ensure user input is correctly sanitized or sandboxed. ",
+      "cwe_id": "CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')",
+      "remediation": null,
+      "detected_by": [
+        "semgrep"
+      ],
+      "terminal_output": null
+    },
+    {
+      "id": null,
+      "fingerprint": "629110da8c90c827ed8ca767f3ba95c395519682efe9c65dbf6c36c6ac1f2eb4",
+      "tool_name": "semgrep",
+      "vulnerability_id": "javascript.express.security.audit.express-path-join-resolve-traversal.express-path-join-resolve-traversal",
+      "title": "Possible writing outside of the destination, make sure that the target path is nested in the intended destination",
+      "severity": "HIGH",
+      "file_path": "src/routes/exports.ts",
+      "line_start": 18,
+      "line_end": 18,
+      "snippet": "requires login",
+      "description": "Possible writing outside of the destination, make sure that the target path is nested in the intended destination",
+      "cwe_id": "CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+      "remediation": null,
+      "detected_by": [
+        "semgrep"
+      ],
+      "terminal_output": null
+    },
+    {
+      "id": null,
+      "fingerprint": "ba7cb0642e87601d6f1c8af790aa9baf14d6f05bc29c8c3715636240d47f962b",
+      "tool_name": "semgrep",
+      "vulnerability_id": "javascript.express.security.audit.xss.direct-response-write.direct-response-write",
+      "title": "Detected directly writing to a Response object from user-defined input. This bypasses any HTML escaping and may expose y",
+      "severity": "HIGH",
+      "file_path": "src/routes/exports.ts",
+      "line_start": 19,
+      "line_end": 19,
+      "snippet": "requires login",
+      "description": "Detected directly writing to a Response object from user-defined input. This bypasses any HTML escaping and may expose your application to a Cross-Site-scripting (XSS) vulnerability. Instead, use 'resp.render()' to render safely escaped HTML.",
+      "cwe_id": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+      "remediation": null,
+      "detected_by": [
+        "semgrep"
+      ],
+      "terminal_output": null
+    },
+    {
+      "id": null,
+      "fingerprint": "b2d5adafe035f784d0ccca041d4d8cba63a29fe1ab311b425bf89456657e59b4",
+      "tool_name": "gitleaks",
+      "vulnerability_id": "aws-access-token",
+      "title": "Leaked Secret: Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and da",
+      "severity": "CRITICAL",
+      "file_path": "src/config.ts",
+      "line_start": 2,
+      "line_end": 2,
+      "snippet": "***REDACTED***",
+      "description": "Potential leak of Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and data breaches on AWS platforms.",
+      "cwe_id": "CWE-798",
+      "remediation": "Revoke and rotate the exposed credential immediately.",
+      "detected_by": [
+        "gitleaks"
+      ],
+      "terminal_output": null
+    }
+  ],
+  "scanned_tools": [
+    "semgrep",
+    "gitleaks",
+    "trufflehog",
+    "trivy"
+  ],
+  "autofix_patch": null,
+  "cached": false
+}

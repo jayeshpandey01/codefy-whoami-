@@ -1,0 +1,136 @@
+export {
+  configureAstGrepGrammarBaseUrl,
+  createAstGrepAdapter,
+} from "./ast-grep/index.js";
+export type { AstGrepMatch, IAstGrepAdapter } from "./ast-grep/index.js";
+
+export { createAnalysisEngine } from "./engine.js";
+export type {
+  AnalysisEngine,
+  CreateAnalysisEngineOptions,
+  ScanResult,
+} from "./engine.js";
+
+export { DeterministicOnlyProvider } from "./llm/deterministic-only.provider.js";
+export { OpenRouterTriageProvider } from "./llm/openrouter.provider.js";
+export type { OpenRouterTriageProviderOptions } from "./llm/openrouter.provider.js";
+export type { ILlmTriageProvider } from "./llm/provider.js";
+
+export { getParser } from "./parser/registry.js";
+export { evictFromCache, parseWithCache } from "./parser/parser-cache.js";
+export {
+  configureGrammarBaseUrl,
+  ensureTreeSitterInitialized,
+  loadLanguage,
+} from "./parser/wasm-loader.js";
+export type { SupportedLanguageId } from "./parser/wasm-loader.js";
+
+export { ALL_RULES } from "./rules/registry.js";
+
+export { calculateShannonEntropy } from "./secrets/entropy.js";
+export { SECRET_REGEX_PATTERNS } from "./secrets/patterns.js";
+export { scanForSecrets } from "./secrets/detector.js";
+
+export { buildCandidatePaths } from "./taint/propagate.js";
+export { resolveSanitizerStatus } from "./taint/sanitizer-filter.js";
+export {
+  matchKnownSanitizerPattern,
+  SANITIZER_PATTERNS,
+} from "./taint/sanitizers.js";
+export { findSourceMatch, JS_TS_SOURCE_PATTERNS } from "./taint/sources.js";
+export { getSinkRuleBinding, JS_TS_SINK_RULES } from "./taint/sinks.js";
+export type { SinkRuleBinding } from "./taint/sinks.js";
+export {
+  deduplicateFindings,
+  getFindingDeduplicationKey,
+  normalizeVulnerabilityType,
+} from "./taint/finding-dedup.js";
+
+export { buildWorkspaceGraph } from "./graph/workspace-graph.js";
+
+export {
+  Logger,
+  ConsoleTransport,
+  MemoryTransport,
+  AxiomTransport,
+  detectPlatform,
+  redactSensitiveData,
+  sanitizeString,
+  APP_VERSION,
+} from "./logging/index.js";
+export type { ConsoleTransportOptions } from "./logging/index.js";
+
+export {
+  ScanOrchestratorClient,
+  OrchestratorApiError,
+  DEFAULT_ORCHESTRATOR_URL,
+  DEFAULT_OPERATOR_API_KEY,
+  DEFAULT_ADMIN_API_KEY,
+  sanitizeTargetHostname,
+  normalizeRemoteFindings,
+  buildQueryString,
+  generateControllerHmacHeaders,
+  generateControllerNonce,
+  signControllerMessage,
+  sha256Hex,
+  cleanCredential,
+  handleOrchestratorMessage,
+  isOrchestratorRequest,
+  ORCHESTRATOR_REQUEST_TYPES,
+  ORCHESTRATOR_ORIGIN_ALLOWLIST,
+  validateOrchestratorUrl,
+  resolveOrchestratorUrl,
+} from "./orchestrator/index.js";
+export type {
+  PollScanOptions,
+  GenerateHmacOptions,
+  NormalizeRemoteFindingsOptions,
+  OrchestratorUrlValidation,
+} from "./orchestrator/index.js";
+
+export { parseQuery } from "./query/intent.js";
+export { executeQuery, runChatQuery } from "./query/executor.js";
+export type { ExecuteQueryOptions } from "./query/executor.js";
+export { pickGraphViewMode } from "./query/graph-view-picker.js";
+export { HostedLlmClient, DEFAULT_AI_GATEWAY_URL } from "./llm/hosted-client.js";
+export type { HostedLlmClientOptions } from "./llm/hosted-client.js";
+export { GatewayAuthClient } from "./auth/gateway-auth-client.js";
+export type {
+  GatewayAuthClientOptions,
+  RegisterInput,
+  RegisterResult,
+} from "./auth/gateway-auth-client.js";
+export { generateOkfBundle } from "./okf/index.js";
+
+export { generateMarkdownReport } from "./report/index.js";
+export { generateFixDiffText, generateUnifiedDiff } from "./report/diff-suggestion.js";
+export type { FixDiffText } from "./report/diff-suggestion.js";
+
+export { SastClient, SecurityServiceApiError } from "./sast/client.js";
+export type { SastClientOptions, PollJobOptions } from "./sast/client.js";
+export {
+  buildZipArchive,
+  packageWorkspaceDirectory,
+  calculateCrc32,
+  isFileIgnored,
+  DEFAULT_IGNORE_PATTERNS,
+} from "./sast/zip-builder.js";
+export type { ZipEntry, PackageDirectoryStats } from "./sast/zip-builder.js";
+
+export { DastClient } from "./dast/client.js";
+export type { DastClientOptions, PollDastJobOptions } from "./dast/client.js";
+
+export { UnifiedSecurityClient } from "./orchestrator/unified-security-client.js";
+export type { UnifiedSecurityClientOptions } from "./orchestrator/unified-security-client.js";
+export {
+  DEFAULT_AUTH_SERVICE_URL,
+  DEFAULT_SAST_SERVICE_URL,
+  DEFAULT_DAST_SERVICE_URL,
+  DEFAULT_CODEFY_JWT,
+} from "./orchestrator/constants.js";
+export {
+  normalizeSastJobFindings,
+  normalizeDastJobFindings,
+  deriveDastRemediation,
+  deriveDastFix,
+} from "./orchestrator/normalizer.js";

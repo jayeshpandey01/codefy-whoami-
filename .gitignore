@@ -1,0 +1,58 @@
+node_modules/
+dist/
+dist-node/
+dist-wasm/
+dist-query/
+.turbo/
+*.tsbuildinfo
+coverage/
+out/
+dist-vsix/
+*.vsix
+src-tauri/target/
+.env
+.env.local
+.env*.local
+.mcp.json
+.astro/
+whoami-report-*.pdf
+.DS_Store
+*.csv
+*.log
+*.db
+catboost_info/
+demo_output/
+trainiq_output/
+
+# IDEs and Editors
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# macOS
+**/.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+
+# Tauri / Rust
+**/src-tauri/target/
+**/src-tauri/gen/
+
+# Misc Unwanted Folders
+build/
+tmp/
+temp/
+.cache/

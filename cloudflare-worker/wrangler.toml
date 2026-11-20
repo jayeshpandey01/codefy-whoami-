@@ -1,0 +1,7 @@
+name = "sast"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+[vars]
+BACKEND_URL = "https://sast-1-1q51.onrender.com"
+

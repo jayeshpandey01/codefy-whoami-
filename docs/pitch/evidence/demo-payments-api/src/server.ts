@@ -1,0 +1,10 @@
+import express from "express";
+import { invoices } from "./routes/invoices";
+import { exportsRouter } from "./routes/exports";
+import { webhooks } from "./routes/webhooks";
+const app = express();
+app.use(express.json());
+app.use(invoices);
+app.use(exportsRouter);
+app.use(webhooks);
+app.listen(3000);

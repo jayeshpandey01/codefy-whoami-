@@ -1,0 +1,87 @@
+import React from "react";
+import {
+  AllIssuesIcon,
+  LogoIcon,
+  RemoteScanIcon,
+  TreeViewIcon,
+} from "./Icons.js";
+
+export type ActivityMode = "workspace" | "tree" | "remote";
+
+export interface ActivityBarProps {
+  activeMode: ActivityMode;
+  onSelectMode: (mode: ActivityMode) => void;
+  findingCount?: number;
+}
+
+export function ActivityBar({
+  activeMode,
+  onSelectMode,
+  findingCount = 0,
+}: ActivityBarProps): React.ReactElement {
+  return (
+    <aside
+      aria-label="Activity Bar"
+      className="flex w-12 flex-col items-center justify-start border-r border-vscode-border bg-vscode-header py-2 select-none shrink-0 font-sans"
+    >
+      {/* Top Brand Logo */}
+      <div className="flex flex-col items-center gap-2.5 w-full">
+        <button
+          type="button"
+          onClick={() => onSelectMode("workspace")}
+          title="Codefy Security Platform"
+          className="flex h-9 w-9 items-center justify-center rounded-md text-vscode-muted hover:text-vscode-fg hover:bg-vscode-card-hover active:bg-vscode-card-hover transition-colors duration-150 cursor-pointer mb-0.5"
+        >
+          <LogoIcon size={19} />
+        </button>
+
+        {/* Workspace Findings & Taint Graph */}
+        <button
+          type="button"
+          onClick={() => onSelectMode("workspace")}
+          title="Issues & Data Flow Analysis"
+          className={`relative flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-150 cursor-pointer ${
+            activeMode === "workspace"
+              ? "bg-vscode-card-hover text-white shadow-sm ring-1 ring-white/10"
+              : "text-vscode-muted hover:text-vscode-fg hover:bg-vscode-card-hover active:bg-vscode-card-hover"
+          }`}
+        >
+          <AllIssuesIcon size={19} />
+          {findingCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-vscode-focus px-1 text-caption font-bold text-white shadow-sm">
+              {findingCount > 99 ? "99+" : findingCount}
+            </span>
+          )}
+        </button>
+
+        {/* Workspace Code Tree View */}
+        <button
+          type="button"
+          onClick={() => onSelectMode("tree")}
+          title="Workspace Architecture & Dependency Tree"
+          className={`flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-150 cursor-pointer ${
+            activeMode === "tree"
+              ? "bg-vscode-card-hover text-white shadow-sm ring-1 ring-white/10"
+              : "text-vscode-muted hover:text-vscode-fg hover:bg-vscode-card-hover active:bg-vscode-card-hover"
+          }`}
+        >
+          <TreeViewIcon size={19} />
+        </button>
+
+        {/* Remote Cloud Scanner */}
+        <button
+          type="button"
+          onClick={() => onSelectMode("remote")}
+          title="Authorized Remote Scanner (Nuclei, HTTPX, Nmap)"
+          className={`flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-150 cursor-pointer ${
+            activeMode === "remote"
+              ? "bg-vscode-card-hover text-white shadow-sm ring-1 ring-white/10"
+              : "text-vscode-muted hover:text-vscode-fg hover:bg-vscode-card-hover active:bg-vscode-card-hover"
+          }`}
+        >
+          <RemoteScanIcon size={19} />
+        </button>
+      </div>
+    </aside>
+  );
+}

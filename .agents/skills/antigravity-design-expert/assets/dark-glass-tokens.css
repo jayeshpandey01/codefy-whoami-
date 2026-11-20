@@ -1,0 +1,121 @@
+/* Antigravity Design Expert - Dark Glass Terminal Design System Tokens
+   Based on SoDEX Perpetual Trading Terminal + Spatial Glassmorphism
+*/
+
+:root {
+  /* Surfaces & Canvases */
+  --terminal-bg-canvas: #101018;
+  --terminal-bg-pure-black: #000000;
+  --terminal-bg-panel: #181820;
+  --terminal-bg-elevated: #242428;
+  --terminal-bg-hover: #202025;
+  --terminal-bg-overlay: rgba(10, 10, 13, 0.85);
+
+  /* Spatial Glass Material Tokens */
+  --terminal-glass-surface: rgba(24, 24, 32, 0.72);
+  --terminal-glass-surface-elevated: rgba(36, 36, 40, 0.65);
+  --terminal-glass-surface-subtle: rgba(24, 24, 32, 0.45);
+  --terminal-glass-blur: blur(16px);
+  --terminal-glass-saturate: saturate(180%);
+  --terminal-glass-contrast: contrast(105%);
+
+  /* Borders & Specular Rim Bevels */
+  --terminal-border-subtle: #303038;
+  --terminal-border-glass: rgba(255, 255, 255, 0.08);
+  --terminal-border-glass-strong: rgba(255, 255, 255, 0.18);
+  --terminal-border-strong: #484850;
+  --terminal-highlight-top: inset 0 1px 1px 0 rgba(255, 255, 255, 0.16);
+  --terminal-highlight-bottom: inset 0 -1px 1px 0 rgba(0, 0, 0, 0.45);
+
+  /* Layered Shadows */
+  --terminal-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --terminal-shadow-md: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
+  --terminal-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.35);
+
+  /* Typography */
+  --terminal-text-bright: #F8F8F8;
+  --terminal-text-primary: #E0E0E0;
+  --terminal-text-secondary: #A8A8A8;
+  --terminal-text-muted: #686870;
+  --terminal-text-inverse: #101018;
+
+  /* Financial Accents & Semantics */
+  --terminal-profit: #00B887;
+  --terminal-profit-hover: #00D49A;
+  --terminal-profit-dark: #064D3B;
+  --terminal-profit-bg: rgba(0, 184, 135, 0.12);
+
+  --terminal-loss: #E03858;
+  --terminal-loss-hover: #F04B68;
+  --terminal-loss-dark: #641D2C;
+  --terminal-loss-bg: rgba(224, 56, 88, 0.12);
+
+  --terminal-bitcoin: #F7931A;
+  --terminal-warning: #C18B45;
+  --terminal-info: #6CA6E8;
+
+  /* Chart Elements */
+  --terminal-chart-bg: #141419;
+  --terminal-chart-grid: #25252D;
+  --terminal-chart-crosshair: #777780;
+  --terminal-chart-candle-up: #00C087;
+  --terminal-chart-candle-down: #E0445E;
+
+  /* Radii */
+  --terminal-radius-panel: 22px;
+  --terminal-radius-card: 14px;
+  --terminal-radius-input: 10px;
+  --terminal-radius-capsule: 9999px;
+}
+
+/* Glass Utility Classes */
+.dark-glass-canvas {
+  background-color: var(--terminal-bg-canvas);
+  color: var(--terminal-text-primary);
+}
+
+.dark-glass-panel {
+  background: var(--terminal-glass-surface);
+  border: 1px solid var(--terminal-border-glass);
+  box-shadow: var(--terminal-highlight-top), var(--terminal-highlight-bottom), var(--terminal-shadow-md);
+  backdrop-filter: var(--terminal-glass-blur) var(--terminal-glass-saturate) var(--terminal-glass-contrast);
+  -webkit-backdrop-filter: var(--terminal-glass-blur) var(--terminal-glass-saturate) var(--terminal-glass-contrast);
+  border-radius: var(--terminal-radius-panel);
+}
+
+.dark-glass-card {
+  background: var(--terminal-glass-surface);
+  border: 1px solid var(--terminal-border-glass);
+  box-shadow: var(--terminal-highlight-top), var(--terminal-shadow-sm);
+  backdrop-filter: var(--terminal-glass-blur);
+  -webkit-backdrop-filter: var(--terminal-glass-blur);
+  border-radius: var(--terminal-radius-card);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark-glass-card:hover {
+  background: rgba(32, 32, 42, 0.8);
+  border-color: var(--terminal-border-glass-strong);
+}
+
+.dark-glass-capsule {
+  background: rgba(24, 24, 32, 0.85);
+  border: 1px solid var(--terminal-border-glass);
+  box-shadow: var(--terminal-highlight-top), var(--terminal-shadow-sm);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--terminal-radius-capsule);
+}
+
+/* Accessibility Fallback */
+@media (prefers-reduced-transparency: reduce) {
+  .dark-glass-panel,
+  .dark-glass-card,
+  .dark-glass-capsule {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #181820 !important;
+    border: 1px solid #303038 !important;
+  }
+}
+

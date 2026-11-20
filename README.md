@@ -1,0 +1,52 @@
+# Codefy (WhoAmI)
+
+A high-performance static analysis and security intelligence platform designed for developers and security engineers.
+
+## Overview
+
+Codefy combines:
+- **In-Process AST Analysis:** Real-time taint-flow finding detection with `web-tree-sitter` and `ast-grep`.
+- **Zero-Data-Leakage AI Intelligence:** GraphRAG client connected to a dedicated inference gateway (`POST /api/chat`) with strict secret redaction and path privacy.
+- **Visual Attack Path Graph:** Interactive Cytoscape / React Flow visualization of blast radius and taint traces.
+- **Cross-Platform Delivery:** VS Code Extension and Desktop Application powered by Tauri.
+
+## Repository Architecture
+
+```text
+├── apps/
+│   ├── desktop-app/        # Tauri + React 19 desktop application
+│   └── vscode-extension/   # VS Code extension host and webview panel
+├── packages/
+│   ├── core/               # AST parsing, taint engine, GraphRAG, and logging
+│   ├── types/              # Single source of truth TypeScript contracts
+│   └── ui/                 # Reusable React 19 UI components & visualizer
+└── docs/                   # Architectural specifications and API references
+```
+
+## Quick Start
+
+### Prerequisites
+- Node.js >= 22
+- pnpm 11.10.0 (pinned in `package.json`)
+
+### Installation & Build
+```bash
+# Install dependencies
+pnpm install
+
+# Type check all packages
+pnpm run type-check
+
+# Build core and UI packages
+pnpm run build
+
+# Run unit tests
+pnpm test
+```
+
+Live integrations against hosted services are skipped by default. To opt in,
+set `RUN_LIVE_TESTS=1` before running the core test suite; these tests may
+create scan targets and jobs on the configured service.
+
+## License
+Private & Proprietary.

@@ -1,0 +1,48 @@
+{
+  "name": "@whoami/desktop-app",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b ./tsconfig.json && vite build",
+    "build:types": "tsc -b ./tsconfig.json",
+    "type-check": "tsc -b ./tsconfig.json",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rimraf dist *.tsbuildinfo",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@ast-grep/wasm": "catalog:",
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-dialog": "^2.7.0",
+    "@tauri-apps/plugin-fs": "^2.5.0",
+    "@tauri-apps/plugin-http": "~2.7.0",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.12.0",
+    "@whoami/core": "workspace:*",
+    "@whoami/types": "workspace:*",
+    "@whoami/ui": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tree-sitter-wasms": "^0.1.11",
+    "web-tree-sitter": "0.26.5"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "rimraf": "^6.0.1",
+    "tree-sitter-javascript": "^0.23.1",
+    "tree-sitter-typescript": "^0.23.2",
+    "typescript": "catalog:",
+    "vite": "^6.0.0",
+    "vite-plugin-static-copy": "^2.2.0",
+    "vite-plugin-wasm": "^3.4.1",
+    "vitest": "catalog:"
+  }
+}

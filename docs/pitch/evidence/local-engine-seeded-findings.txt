@@ -1,0 +1,3 @@
+src/config.ts secret-aws-access-key confirmed critical 2->2
+src/routes/exports.ts js-command-injection-exec confirmed critical 9->10
+src/routes/webhooks.ts js-ssrf-unvalidated-url confirmed high 6->7

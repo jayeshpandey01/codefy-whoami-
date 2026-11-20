@@ -1,0 +1,57 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capabilities for the WhoAmI desktop app's main window -- read-only on the filesystem (no fs write, no shell). Outbound network: the updater plugin's request to the signed release endpoint, and the http plugin's requests to the orchestrator allowlist below (made from Rust so the orchestrator's lack of CORS support doesn't block them; see docs/plans/desktop-backend-connection.md). Keep the http allowlist in sync with ORCHESTRATOR_URL_ALLOWLIST in packages/core.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:default",
+    "dialog:default",
+    "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
+    "fs:allow-read-dir",
+    "fs:allow-mkdir",
+    "fs:allow-exists",
+    "fs:allow-size",
+    "updater:default",
+    "process:allow-restart",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        "$HOME",
+        "$HOME/**",
+        "$HOME/**/.*",
+        "$HOME/**/.*/**"
+      ]
+    },
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://cmd-d-llm.vercel.app/*"
+        },
+        {
+          "url": "https://sast.jayeshpandey754.workers.dev/*"
+        },
+        {
+          "url": "https://dast.pandeyjayesh020.workers.dev/*"
+        },
+        {
+          "url": "https://dast-js9w.onrender.com/*"
+        },
+        {
+          "url": "https://dast-dutn.onrender.com/*"
+        },
+        {
+          "url": "http://localhost:*/*"
+        },
+        {
+          "url": "http://127.0.0.1:*/*"
+        }
+      ]
+    }
+  ]
+}

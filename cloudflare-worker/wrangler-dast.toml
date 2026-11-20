@@ -1,0 +1,6 @@
+name = "dast"
+main = "dast-worker.js"
+compatibility_date = "2024-09-01"
+
+[vars]
+BACKEND_URL = "https://dast-js9w.onrender.com"

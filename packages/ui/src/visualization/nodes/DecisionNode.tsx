@@ -1,0 +1,100 @@
+import { memo, useState, type ReactElement } from "react";
+import { Handle, Position, NodeToolbar, type NodeProps } from "@xyflow/react";
+import type { TaintNodeData } from "./SourceNode.js";
+import { DiamondIcon } from "../../components/Icons.js";
+import { NodeInfoCard } from "./NodeInfoCard.js";
+
+export const DecisionNode = memo(function DecisionNode({
+  data,
+  selected,
+}: NodeProps & { data: TaintNodeData }): ReactElement {
+  const [isHovered, setIsHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`relative w-[240px] max-w-[240px] rounded-lg border border-severity-high bg-vscode-card p-2.5 font-sans shadow-md transition-colors duration-150 ${
+        selected ? "ring-2 ring-severity-medium" : ""
+      } ${data.isDimmed ? "opacity-30" : "opacity-100"} ${
+        data.isHighlighted ? "ring-2 ring-severity-high" : ""
+      }`}
+    >
+      <NodeToolbar
+        isVisible={isHovered || selected}
+        position={Position.Bottom}
+        offset={8}
+        className="z-50 pointer-events-auto !p-0 !bg-transparent !border-none !shadow-none"
+      >
+        <NodeInfoCard
+          data={data}
+          type="decision"
+          selected={selected}
+          onClose={() => setIsHovered(false)}
+        />
+      </NodeToolbar>
+
+      {/* Decision Header */}
+      <div className="flex items-center justify-between gap-1 pb-1 border-b border-vscode-border">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <DiamondIcon size={13} className="text-[#FFD700]" />
+          <span className="text-caption2 font-bold uppercase tracking-wider text-[#FFD700]">
+            Condition / Guard
+          </span>
+        </div>
+        <span className="rounded bg-severity-high-bg border border-severity-high/40 px-1 text-caption2 font-mono text-[#FFD700]">
+          Branch Gate
+        </span>
+      </div>
+
+      {/* Condition Expression */}
+      <div className="mt-1 text-xs font-mono text-[#DCDCAA] truncate font-semibold" title={data.label}>
+        {data.label}
+      </div>
+
+      {/* Code reference */}
+      {data.filePath && (
+        <div className="text-caption2 font-mono text-vscode-muted truncate mt-0.5">
+          {data.filePath}:{data.line}
+        </div>
+      )}
+
+      {/* Ingress handles (Top for DOWN layout, Left for RIGHT layout) */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="!h-2.5 !w-2.5 !border-vscode-bg !bg-severity-high"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="target-left"
+        className="!h-2.5 !w-2.5 !border-vscode-bg !bg-severity-high"
+      />
+
+      {/* True / Sanitized Branch (Left) */}
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="left"
+        className="!h-2.5 !w-2.5 !border-vscode-bg !bg-severity-low"
+      />
+
+      {/* False / Exploit Bypass Branch (Right) */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!h-2.5 !w-2.5 !border-vscode-bg !bg-severity-critical"
+      />
+
+      {/* Alternative Bottom Handle */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        className="!h-2 !w-2 !border-vscode-bg !bg-severity-high"
+      />
+    </div>
+  );
+});

@@ -1,0 +1,1954 @@
+import {
+  type AuditEventRead,
+  type CanonicalIssue,
+  type CanonicalIssueDetailResponse,
+  type ControllerJobClaim,
+  type ControllerJobCompletePayload,
+  type ControllerJobFailPayload,
+  type ControllerJobStatus,
+  type HealthLiveResponse,
+  type HealthReadyResponse,
+  type IssueListParams,
+  type IssueListResponse,
+  type IssueMetricsSummaryResponse,
+  type IssueStatus,
+  type ListSastScansParams,
+  type ListScansParams,
+  type DastJobSummary,
+  type DastToolCatalogResponse,
+  type DastValidateTargetResponse,
+  type OrchestratorClientConfig,
+  type PaginationParams,
+  type PlatformStatsRead,
+  type SASTScanCreate,
+  type SastProfile,
+  type SastProfilesResponse,
+  type ScanCreate,
+  type ScanRead,
+  type ScanResultRead,
+  type ScanStatus,
+  type TargetCreate,
+  type TargetRead,
+  VercelError,
+  isSastProfile,
+} from "@whoami/types";
+import { Logger } from "../logging/logger.js";
+import { SastClient, SecurityServiceApiError } from "../sast/client.js";
+import { DastClient } from "../dast/client.js";
+import { buildZipArchive, packageWorkspaceDirectory } from "../sast/zip-builder.js";
+import {
+  DEFAULT_ORCHESTRATOR_URL,
+  DEFAULT_OPERATOR_API_KEY,
+  DEFAULT_ADMIN_API_KEY,
+  DEFAULT_SAST_SERVICE_URL,
+  DEFAULT_DAST_SERVICE_URL,
+  DEFAULT_CODEFY_JWT,
+} from "./constants.js";
+import { generateControllerHmacHeaders } from "./hmac.js";
+
+export { DEFAULT_ORCHESTRATOR_URL, DEFAULT_OPERATOR_API_KEY, DEFAULT_ADMIN_API_KEY, DEFAULT_CODEFY_JWT };
+
+export const DAST_PROFILE_TO_TOOL_MAP: Record<string, { tool: string; mode: "passive" | "active" }> = {
+  // --- Passive Tools (15 Engines) ---
+  recon: { tool: "httpx", mode: "passive" },
+  httpx: { tool: "httpx", mode: "passive" },
+  "tech-detect": { tool: "httpx", mode: "passive" },
+  "header-audit": { tool: "httpx", mode: "passive" },
+
+  "web-discovery": { tool: "katana", mode: "passive" },
+  "web-crawl": { tool: "katana", mode: "passive" },
+  katana: { tool: "katana", mode: "passive" },
+  "sitemap-parser": { tool: "katana", mode: "passive" },
+  "robots-parser": { tool: "katana", mode: "passive" },
+  "url-extractor": { tool: "katana", mode: "passive" },
+
+  "network-portscan": { tool: "nmap", mode: "passive" },
+  nmap: { tool: "nmap", mode: "passive" },
+
+  "fast-portscan": { tool: "masscan", mode: "passive" },
+  masscan: { tool: "masscan", mode: "passive" },
+
+  "smart-portscan": { tool: "naabu", mode: "passive" },
+  naabu: { tool: "naabu", mode: "passive" },
+
+  "dns-recon": { tool: "dnsx", mode: "passive" },
+  dnsx: { tool: "dnsx", mode: "passive" },
+  shuffledns: { tool: "dnsx", mode: "passive" },
+
+  "subdomain-takeover": { tool: "subzy", mode: "passive" },
+  subzy: { tool: "subzy", mode: "passive" },
+
+  "waf-detect": { tool: "wafw00f", mode: "passive" },
+  wafw00f: { tool: "wafw00f", mode: "passive" },
+
+  "oob-interaction": { tool: "interactsh", mode: "passive" },
+  interactsh: { tool: "interactsh", mode: "passive" },
+  "ssrf-detector": { tool: "interactsh", mode: "passive" },
+
+  "subdomain-discovery": { tool: "subfinder", mode: "passive" },
+  subfinder: { tool: "subfinder", mode: "passive" },
+
+  "historical-urls": { tool: "gau", mode: "passive" },
+  gau: { tool: "gau", mode: "passive" },
+
+  "tls-audit": { tool: "sslyze", mode: "passive" },
+  sslyze: { tool: "sslyze", mode: "passive" },
+  tlsx: { tool: "sslyze", mode: "passive" },
+
+  "js-secret-analysis": { tool: "jsluice", mode: "passive" },
+  jsluice: { tool: "jsluice", mode: "passive" },
+
+  "graphql-audit": { tool: "graphql-cop", mode: "passive" },
+  "graphql-cop": { tool: "graphql-cop", mode: "passive" },
+
+  "deep-osint": { tool: "amass", mode: "passive" },
+  amass: { tool: "amass", mode: "passive" },
+
+  // --- Active Tools (15 Engines) ---
+  "vuln-assessment": { tool: "nuclei", mode: "active" },
+  nuclei: { tool: "nuclei", mode: "active" },
+  "cve-scan": { tool: "nuclei", mode: "active" },
+
+  "xss-scan": { tool: "dalfox", mode: "active" },
+  dalfox: { tool: "dalfox", mode: "active" },
+
+  "dast-zap": { tool: "zap", mode: "active" },
+  zap: { tool: "zap", mode: "active" },
+
+  "content-discovery": { tool: "ffuf", mode: "active" },
+  ffuf: { tool: "ffuf", mode: "active" },
+
+  "deep-content-discovery": { tool: "feroxbuster", mode: "active" },
+  feroxbuster: { tool: "feroxbuster", mode: "active" },
+
+  "cors-audit": { tool: "corsy", mode: "active" },
+  "cors-check": { tool: "corsy", mode: "active" },
+  corsy: { tool: "corsy", mode: "active" },
+
+  "crlf-scan": { tool: "crlfuzz", mode: "active" },
+  crlfuzz: { tool: "crlfuzz", mode: "active" },
+
+  "ssti-scan": { tool: "sstimap", mode: "active" },
+  sstimap: { tool: "sstimap", mode: "active" },
+
+  "sql-injection": { tool: "sqlmap", mode: "active" },
+  "sqli-scan": { tool: "sqlmap", mode: "active" },
+  sqlmap: { tool: "sqlmap", mode: "active" },
+
+  "web-server-scan": { tool: "nikto", mode: "active" },
+  "server-scan": { tool: "nikto", mode: "active" },
+  nikto: { tool: "nikto", mode: "active" },
+
+  "param-discovery": { tool: "arjun", mode: "active" },
+  "parameter-discovery": { tool: "arjun", mode: "active" },
+  arjun: { tool: "arjun", mode: "active" },
+
+  "api-route-discovery": { tool: "kiterunner", mode: "active" },
+  "api-fuzzer": { tool: "kiterunner", mode: "active" },
+  kiterunner: { tool: "kiterunner", mode: "active" },
+
+  "jwt-tool": { tool: "jwt_tool", mode: "active" },
+  jwt_tool: { tool: "jwt_tool", mode: "active" },
+
+  "command-injection": { tool: "commix", mode: "active" },
+  "rce-scan": { tool: "commix", mode: "active" },
+  commix: { tool: "commix", mode: "active" },
+
+  "access-control": { tool: "access-control", mode: "active" },
+  "auth-matrix": { tool: "access-control", mode: "active" },
+  "idor-tester": { tool: "access-control", mode: "active" },
+};
+
+export const DAST_ACTIVE_TOOLS = new Set<string>([
+  "nuclei",
+  "vuln-assessment",
+  "cve-scan",
+  "dalfox",
+  "xss-scan",
+  "zap",
+  "dast-zap",
+  "ffuf",
+  "content-discovery",
+  "feroxbuster",
+  "deep-content-discovery",
+  "corsy",
+  "cors-check",
+  "cors-audit",
+  "crlfuzz",
+  "crlf-scan",
+  "sstimap",
+  "ssti-scan",
+  "sqlmap",
+  "sql-injection",
+  "sqli-scan",
+  "nikto",
+  "web-server-scan",
+  "server-scan",
+  "arjun",
+  "param-discovery",
+  "parameter-discovery",
+  "kiterunner",
+  "api-route-discovery",
+  "api-fuzzer",
+  "jwt_tool",
+  "jwt-tool",
+  "commix",
+  "command-injection",
+  "rce-scan",
+  "access-control",
+  "auth-matrix",
+  "idor-tester",
+]);
+
+export const DAST_PASSIVE_TOOLS = new Set<string>([
+  "httpx",
+  "recon",
+  "tech-detect",
+  "header-audit",
+  "nmap",
+  "network-portscan",
+  "naabu",
+  "smart-portscan",
+  "masscan",
+  "fast-portscan",
+  "katana",
+  "web-discovery",
+  "web-crawl",
+  "sitemap-parser",
+  "robots-parser",
+  "url-extractor",
+  "dnsx",
+  "dns-recon",
+  "shuffledns",
+  "subzy",
+  "subdomain-takeover",
+  "wafw00f",
+  "waf-detect",
+  "interactsh",
+  "oob-interaction",
+  "ssrf-detector",
+  "subfinder",
+  "subdomain-discovery",
+  "gau",
+  "historical-urls",
+  "sslyze",
+  "tls-audit",
+  "tlsx",
+  "jsluice",
+  "js-secret-analysis",
+  "graphql-cop",
+  "graphql-audit",
+  "amass",
+  "deep-osint",
+]);
+
+export function resolveDastProfile(profile?: string | null): { tool?: string; mode: "passive" | "active" } {
+  if (!profile) return { mode: "passive" };
+  const p = profile.toLowerCase().trim();
+  const mapped = DAST_PROFILE_TO_TOOL_MAP[p];
+  if (mapped) {
+    return mapped;
+  }
+  const mode = DAST_ACTIVE_TOOLS.has(p) ? "active" : "passive";
+  return { tool: p, mode };
+}
+
+export interface PollScanOptions {
+  /** Initial poll interval; polling backs off from here while nothing changes. */
+  intervalMs?: number;
+  /** Ceiling for the backed-off poll interval. */
+  maxIntervalMs?: number;
+  maxWaitMs?: number;
+  onProgress?: (scan: ScanRead) => void;
+  kind?: "dast" | "sast";
+}
+
+export interface PollScansOptions extends Omit<PollScanOptions, "onProgress"> {
+  kind?: "dast" | "sast";
+  /**
+   * When every polled scan belongs to this target, one list request per tick
+   * covers all of them instead of one status request per scan.
+   */
+  targetId?: string;
+  onProgress?: (scans: readonly ScanRead[]) => void;
+}
+
+export interface PolledScan {
+  scan: ScanRead;
+  result?: ScanResultRead;
+}
+
+const TERMINAL_SCAN_STATUSES = new Set(["completed", "failed", "cancelled"]);
+
+/**
+ * The backend now guarantees every scan reaches a terminal state: scanner
+ * subprocesses time out at <=30 min (profiles.py), and a controller that dies
+ * mid-scan has its heartbeat lease expire within ~4 min (app/worker.py). So the
+ * client can wait out the longest legitimate scan instead of abandoning a
+ * still-running nuclei/ZAP job at 10 min.
+ */
+export const DEFAULT_POLL_MAX_WAIT_MS = 40 * 60 * 1000;
+
+/** Consecutive transient poll failures tolerated before giving up. */
+const MAX_CONSECUTIVE_POLL_ERRORS = 8;
+
+function isTransientOrchestratorError(err: unknown): err is OrchestratorApiError {
+  if (!(err instanceof OrchestratorApiError)) return false;
+  if (
+    err.code === "rate_limited" ||
+    err.code === "request_timeout" ||
+    err.code === "network_error"
+  ) {
+    return true;
+  }
+  // 502/503/504: Render returns these while the API restarts during a deploy.
+  return err.statusCode === 502 || err.statusCode === 503 || err.statusCode === 504;
+}
+
+function withJitter(ms: number): number {
+  // ±20% so many pollers don't fire in lockstep.
+  return Math.round(ms * (0.8 + Math.random() * 0.4));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export interface OrchestratorErrorMeta {
+  code?: string;
+  reason?: string;
+  hint?: string;
+  fix?: string;
+  link?: string;
+}
+
+export class OrchestratorApiError extends VercelError {
+  public readonly responseBody: unknown;
+  /** From a 429's Retry-After header, when the server sent one. */
+  public retryAfterMs?: number;
+
+  constructor(
+    message: string,
+    statusCode: number,
+    responseBody: unknown,
+    options?: OrchestratorErrorMeta,
+  ) {
+    super(message, {
+      code:
+        options?.code ??
+        (statusCode > 0 ? `http_${statusCode}` : "network_error"),
+      scope: "orchestrator",
+      statusCode: statusCode > 0 ? statusCode : 500,
+      reason: options?.reason,
+      hint: options?.hint,
+      fix: options?.fix,
+      link: options?.link ?? DEFAULT_ORCHESTRATOR_URL,
+    });
+    this.name = "OrchestratorApiError";
+    this.responseBody = responseBody;
+  }
+}
+
+export function cleanCredential(val?: string | null): string | undefined {
+  if (!val) return undefined;
+  const trimmed = val.trim().replace(/^["']|["']$/g, "").trim();
+  if (
+    !trimmed ||
+    trimmed === "undefined" ||
+    trimmed === "null" ||
+    trimmed === "none" ||
+    trimmed === "YOUR_API_KEY" ||
+    trimmed === "<YOUR_API_KEY>" ||
+    trimmed === "<OPERATOR_OR_ADMIN_API_KEY>"
+  ) {
+    return undefined;
+  }
+  return trimmed;
+}
+
+/**
+ * Sanitizes user input into a plain hostname or IP address without URL scheme, port, or path,
+ * as strictly required by the Orchestrator API (/v1/targets).
+ */
+export function sanitizeTargetHostname(raw: string): string {
+  if (!raw) return "scan-target.example.com";
+  let cleaned = raw.trim();
+  // Strip protocol scheme (http://, https://, ws://, etc.)
+  cleaned = cleaned.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//i, "");
+  // Strip paths, query strings, and hashes
+  cleaned = cleaned.replace(/[/?#].*$/, "");
+  // Strip port if present (e.g. :8080) when not an IPv6 bracketed address
+  if (!cleaned.includes("]") && cleaned.includes(":") && !cleaned.startsWith("[")) {
+    const parts = cleaned.split(":");
+    if (parts[0]) cleaned = parts[0];
+  }
+  cleaned = cleaned.trim();
+  if (!cleaned || cleaned.endsWith(".internal") || cleaned === "localhost") {
+    return "scan-target.example.com";
+  }
+  return cleaned;
+}
+
+/**
+ * Builds a query string from key-value pairs, omitting undefined and null entries.
+ */
+export function buildQueryString(params?: Record<string, unknown>): string {
+  if (!params) return "";
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") {
+      parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
+    }
+  }
+  return parts.length > 0 ? `?${parts.join("&")}` : "";
+}
+
+export class ScanOrchestratorClient {
+  public readonly baseUrl: string;
+  private readonly apiKey?: string;
+  private readonly adminApiKey?: string;
+  private readonly authMode: "api_key" | "bearer";
+  private readonly jwtToken?: string;
+  private readonly controllerSecret?: string;
+  private readonly fetchFn: typeof fetch;
+  private readonly timeoutMs: number;
+  private readonly logger: Logger;
+  private readonly useMicroservices: boolean;
+  private readonly sastClient: SastClient;
+  private readonly dastClient: DastClient;
+  private static readonly targetMap = new Map<string, TargetRead>();
+  private static readonly scanMetaMap = new Map<
+    string,
+    { targetId: string; profile: string; targetValue: string; kind: "sast" | "dast" }
+  >();
+
+  public static clearStateForTests(): void {
+    ScanOrchestratorClient.targetMap.clear();
+    ScanOrchestratorClient.scanMetaMap.clear();
+  }
+
+  public static getScanMeta(scanId: string): { targetId: string; profile: string; targetValue: string; kind: "sast" | "dast" } | undefined {
+    return ScanOrchestratorClient.scanMetaMap.get(scanId);
+  }
+
+  constructor(config: OrchestratorClientConfig & { logger?: Logger } = {}) {
+    const rawUrl = config.baseUrl || DEFAULT_ORCHESTRATOR_URL;
+    this.baseUrl = cleanCredential(rawUrl)?.replace(/\/+$/, "") || DEFAULT_ORCHESTRATOR_URL;
+
+    this.apiKey = cleanCredential(config.apiKey);
+    this.adminApiKey = cleanCredential(config.adminApiKey);
+
+    this.authMode = config.authMode || "api_key";
+    const rawJwt = cleanCredential(config.jwtToken || config.bearerToken);
+    this.jwtToken = rawJwt && rawJwt !== "offline-local-session" ? rawJwt : undefined;
+
+    this.controllerSecret = cleanCredential(config.controllerSecret);
+
+    // Bind the global fetch: in a browser/webview it's branded to its global,
+    // so calling it as `this.fetchFn(...)` throws "Illegal invocation" (same
+    // fix as GatewayAuthClient's constructor).
+    this.fetchFn =
+      (config.fetchFn as typeof fetch) ||
+      (typeof fetch !== "undefined"
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
+
+    // Render's free/hobby tier spins the service down after inactivity and takes
+    // 30-50s to cold-start on the next request, so a 30s timeout aborts client-side
+    // right as the server would have responded. 60s comfortably covers cold starts
+    // while still callable with a shorter config.timeoutMs when the caller knows better.
+    this.timeoutMs = config.timeoutMs || 60000;
+    this.logger = (
+      config.logger || new Logger({ source: "orchestrator-client" })
+    ).child("orchestrator-client");
+
+    this.useMicroservices =
+      config.useMicroservices ?? (this.baseUrl === DEFAULT_ORCHESTRATOR_URL);
+    this.sastClient = new SastClient({
+      baseUrl: config.sastBaseUrl || DEFAULT_SAST_SERVICE_URL,
+      jwtToken: this.jwtToken || DEFAULT_CODEFY_JWT,
+      apiKey: this.apiKey,
+      fetchImpl: this.fetchFn,
+      timeoutMs: this.timeoutMs,
+    });
+    this.dastClient = new DastClient({
+      baseUrl: config.dastBaseUrl || DEFAULT_DAST_SERVICE_URL,
+      jwtToken: this.jwtToken || DEFAULT_CODEFY_JWT,
+      apiKey: this.apiKey,
+      fetchImpl: this.fetchFn,
+      timeoutMs: this.timeoutMs,
+    });
+  }
+
+  private async request<T>(
+    path: string,
+    options: {
+      method?: "GET" | "POST" | "PUT" | "DELETE";
+      body?: unknown;
+      headers?: Record<string, string>;
+      auth?: "admin" | "operator" | "controller" | "none";
+      idempotencyKey?: string;
+    } = {},
+  ): Promise<T> {
+    if (!this.fetchFn) {
+      throw new VercelError(
+        "[ScanOrchestratorClient] No fetch implementation available in current environment",
+        {
+          code: "missing_fetch",
+          scope: "orchestrator",
+          hint: "Provide a custom fetchFn in configuration or ensure global fetch is available.",
+        },
+      );
+    }
+
+    const method = options.method || "GET";
+    const authType = options.auth ?? "operator";
+    const url = `${this.baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      ...options.headers,
+    };
+
+    if (options.body !== undefined && options.body !== null) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    if (options.idempotencyKey) {
+      headers["Idempotency-Key"] = options.idempotencyKey;
+    }
+
+    // Attach credentials according to endpoint role requirements
+    if (authType === "admin") {
+      const key = this.adminApiKey || this.apiKey;
+      if (key) {
+        headers["X-API-Key"] = key;
+        if (this.adminApiKey) {
+          headers["X-Admin-API-Key"] = this.adminApiKey;
+        }
+      }
+      if (this.jwtToken && this.jwtToken !== "offline-local-session") {
+        headers["Authorization"] = `Bearer ${this.jwtToken}`;
+      } else if (key && !headers["Authorization"]) {
+        headers["Authorization"] = `Bearer ${key}`;
+      }
+      if (!headers["X-API-Key"] && !headers["Authorization"]) {
+        throw new OrchestratorApiError(
+          "An administrator account is required for this operation",
+          401,
+          null,
+          {
+            code: "admin_auth_missing",
+            reason: "The signed-in account is missing administrator permissions.",
+            hint: "Sign in with an administrator-enabled account or contact your Axiom administrator.",
+            fix: "Use an account with the required role.",
+          },
+        );
+      }
+    } else if (authType === "operator") {
+      const key = this.apiKey || this.adminApiKey;
+      if (key) {
+        headers["X-API-Key"] = key;
+        if (this.adminApiKey) {
+          headers["X-Admin-API-Key"] = this.adminApiKey;
+        }
+      }
+      if (this.jwtToken && this.jwtToken !== "offline-local-session") {
+        headers["Authorization"] = `Bearer ${this.jwtToken}`;
+      } else if (!this.useMicroservices && key && !headers["Authorization"]) {
+        headers["Authorization"] = `Bearer ${key}`;
+      }
+      if (!headers["X-API-Key"] && !headers["Authorization"]) {
+        throw new OrchestratorApiError(
+          "Sign in to use cloud scans",
+          401,
+          null,
+          {
+            code: "auth_missing",
+            reason: "No valid signed-in user session is available.",
+            hint: "Sign in again to refresh your cloud-scan authorization.",
+            fix: "Sign in to your Codefy account.",
+          },
+        );
+      }
+    } else if (authType === "controller") {
+      if (!this.controllerSecret) {
+        throw new OrchestratorApiError(
+          "Controller authentication required but no CONTROLLER_SHARED_SECRET configured",
+          401,
+          null,
+          {
+            code: "controller_secret_missing",
+            reason: "Controller HMAC shared secret is missing.",
+            hint: "Provide controllerSecret in client configuration or set CONTROLLER_SHARED_SECRET.",
+            fix: "Configure CONTROLLER_SHARED_SECRET in .env or worker settings.",
+          },
+        );
+      }
+      const controllerHeaders = generateControllerHmacHeaders({
+        method,
+        path,
+        body: options.body,
+        secret: this.controllerSecret,
+      });
+      Object.assign(headers, controllerHeaders);
+    }
+
+    this.logger.debug(`API Request: ${method} ${path}`, {
+      url,
+      authType,
+      hasBody: options.body !== undefined,
+    });
+
+    const startTime = Date.now();
+    let response: Response;
+
+    try {
+      response = await this.fetchFn(url, {
+        method,
+        headers,
+        body:
+          options.body !== undefined && options.body !== null
+            ? typeof options.body === "string"
+              ? options.body
+              : JSON.stringify(options.body)
+            : undefined,
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch (err: unknown) {
+      const durationMs = Date.now() - startTime;
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const isTimeout =
+        err instanceof Error &&
+        (err.name === "TimeoutError" || err.name === "AbortError");
+
+      this.logger.error(
+        `API Request Network Failure: ${method} ${path}`,
+        err instanceof Error ? err : new Error(errMsg),
+        { durationMs, isTimeout },
+      );
+
+      if (isTimeout) {
+        throw new OrchestratorApiError(
+          `Timed out waiting for Orchestrator response after ${this.timeoutMs}ms: ${method} ${path}`,
+          0,
+          null,
+          {
+            code: "request_timeout",
+            reason: `${this.baseUrl} did not respond within ${this.timeoutMs}ms. Free-tier deployments spin down when idle and can take up to a minute to cold-start on the next request.`,
+            hint: "If the service was idle, the first request after a while wakes it up but can still time out — retry once.",
+            fix: "Retry the request, or raise timeoutMs in the orchestrator client config if this happens consistently on a warm service.",
+          },
+        );
+      }
+
+      throw new OrchestratorApiError(
+        `Network error communicating with Orchestrator: ${errMsg}`,
+        0,
+        null,
+        {
+          code: "network_error",
+          reason: `Failed to establish connection to ${this.baseUrl}${path}`,
+          hint: `Ensure ${this.baseUrl} is reachable and your network is connected.`,
+          fix: "Check ORCHESTRATOR_URL in .env or settings.",
+        },
+      );
+    }
+
+    const durationMs = Date.now() - startTime;
+    const contentType = response.headers.get("content-type") || "";
+    const isJson = contentType.includes("application/json");
+
+    let responseData: unknown;
+    if (isJson) {
+      try {
+        responseData = await response.json();
+      } catch {
+        responseData = null;
+      }
+    } else {
+      responseData = await response.text();
+    }
+
+    if (!response.ok) {
+      let errorMessage = `Orchestrator request failed with status ${response.status}`;
+      let errorType = "api_error";
+
+      if (responseData && typeof responseData === "object") {
+        const obj = responseData as Record<string, unknown>;
+
+        // Check unified error envelope: { error: { type, detail, status } }
+        if (obj["error"] && typeof obj["error"] === "object") {
+          const errEnv = obj["error"] as Record<string, unknown>;
+          if (typeof errEnv["type"] === "string") {
+            errorType = errEnv["type"];
+          }
+          if (typeof errEnv["detail"] === "string") {
+            errorMessage = errEnv["detail"];
+          } else if (Array.isArray(errEnv["detail"])) {
+            errorMessage = this.formatDetailArray(errEnv["detail"]);
+          }
+        } else if ("detail" in obj) {
+          // Standard FastAPI fallback: { detail: ... }
+          if (typeof obj["detail"] === "string") {
+            errorMessage = obj["detail"];
+          } else if (Array.isArray(obj["detail"])) {
+            errorMessage = this.formatDetailArray(obj["detail"]);
+          }
+        }
+      }
+
+      this.logger.warn(
+        `API Error Response: ${method} ${path} -> ${response.status}`,
+        {
+          url,
+          authType,
+          statusCode: response.status,
+          error: errorMessage,
+          errorType,
+          durationMs,
+        },
+      );
+
+      let meta: OrchestratorErrorMeta = {};
+      if (response.status === 401 || response.status === 403) {
+        const isSessionExpired =
+          /session.*expire|token.*invalid|invalid.*token|expired.*token|token.*revoked/i.test(errorMessage);
+        meta = {
+          code: isSessionExpired ? "session_expired" : "auth_failed",
+          reason: isSessionExpired
+            ? "Your authentication session has expired or the token is invalid."
+            : "The signed-in account was not authorized for this operation.",
+          hint: isSessionExpired
+            ? "Please sign in again to your Codefy account or switch to Continue Offline."
+            : "Sign in with an account that has access to this target and operation.",
+          fix: isSessionExpired
+            ? "Sign in with your email and password."
+            : "Check the account's role and target authorization.",
+        };
+      } else if (response.status === 404) {
+        meta = {
+          code: "not_found",
+          reason: "The requested resource was not found on the Orchestrator.",
+          hint: "Ensure the ID exists before performing this operation.",
+        };
+      } else if (response.status === 409) {
+        meta = {
+          code: "conflict",
+          reason:
+            "Resource is currently in an incompatible state for the requested operation.",
+          hint: "Wait for the scan job to finish or check job status.",
+        };
+      } else if (response.status === 422 || errorType === "validation_error") {
+        meta = {
+          code: "validation_error",
+          reason: errorMessage,
+          hint: "Payload validation failed on required fields or constraints.",
+          fix: "Check input format against API specifications.",
+        };
+      } else if (response.status === 429) {
+        meta = {
+          code: "rate_limited",
+          reason:
+            "Rate limit (60 requests/minute) exceeded on the Orchestrator service.",
+          hint: "Back off and wait a few moments before retrying.",
+          fix: "Slow down request polling rate.",
+        };
+      }
+
+      const apiError = new OrchestratorApiError(
+        errorMessage,
+        response.status,
+        responseData,
+        meta,
+      );
+      if (response.status === 429) {
+        const retryAfterSec = Number.parseInt(
+          response.headers?.get?.("retry-after") ?? "",
+          10,
+        );
+        if (Number.isFinite(retryAfterSec) && retryAfterSec > 0) {
+          apiError.retryAfterMs = retryAfterSec * 1000;
+        }
+      }
+      throw apiError;
+    }
+
+    this.logger.debug(
+      `API Success Response: ${method} ${path} -> ${response.status}`,
+      { durationMs },
+    );
+
+    if (!isJson && typeof responseData === "string" && responseData.trim().length > 0) {
+      const preview = responseData.trim().slice(0, 120);
+      throw new OrchestratorApiError(
+        `Orchestrator service at ${this.baseUrl} returned non-JSON response (${response.status} ${response.statusText || "OK"}, Content-Type: "${contentType || "unknown"}"): "${preview}". ` +
+          `Verify your endpoint is proxying API requests to the Codefy service.`,
+        response.status,
+        responseData,
+        {
+          code: "invalid_service_response",
+          reason: "The service returned plain text or HTML instead of JSON.",
+          hint: "Ensure the backend or Cloudflare Worker reverse proxy is running and configured correctly.",
+        },
+      );
+    }
+
+    return responseData as T;
+  }
+
+  private formatDetailArray(details: unknown[]): string {
+    return details
+      .map((d: unknown) => {
+        if (d && typeof d === "object") {
+          const dObj = d as Record<string, unknown>;
+          const loc = Array.isArray(dObj["loc"])
+            ? dObj["loc"].filter((x) => x !== "body").join(".")
+            : "";
+          const msg = typeof dObj["msg"] === "string" ? dObj["msg"] : "";
+          return loc ? `${loc}: ${msg}` : msg;
+        }
+        return String(d);
+      })
+      .filter(Boolean)
+      .join("; ");
+  }
+
+  // ============================================================================
+  // 1. Health & Operational Endpoints (Public)
+  // ============================================================================
+
+  /**
+   * Basic Health Check (GET /health)
+   */
+  async getHealth(): Promise<{ status: string; service: string }> {
+    return this.request<{ status: string; service: string }>("/health", {
+      auth: "none",
+    });
+  }
+
+  /**
+   * Kubernetes Liveness Probe (GET /health/live)
+   */
+  async getLiveness(): Promise<HealthLiveResponse> {
+    return this.request<HealthLiveResponse>("/health/live", { auth: "none" });
+  }
+
+  /**
+   * Kubernetes / System Readiness Probe (GET /health/ready)
+   */
+  async getReadiness(): Promise<HealthReadyResponse> {
+    return this.request<HealthReadyResponse>("/health/ready", { auth: "none" });
+  }
+
+  // ============================================================================
+  // 2. Target Management Endpoints (user-owned targets; admin can manage all)
+  // ============================================================================
+
+  /**
+   * Register a new authorized target (POST /v1/targets)
+   */
+  async registerTarget(target: TargetCreate): Promise<TargetRead> {
+    const isSourceCode =
+      target.target_type === "source_code" ||
+      target.value.startsWith("/") ||
+      target.value.includes("\\") ||
+      target.value.startsWith("git@") ||
+      (target.value.startsWith("https://") && target.value.includes("github.com"));
+
+    const targetPayload: TargetCreate = {
+      ...target,
+      target_type: isSourceCode ? "source_code" : (target.target_type || "network"),
+      value: isSourceCode ? target.value.trim() : sanitizeTargetHostname(target.value),
+    };
+    if (this.useMicroservices) {
+      const targetId = `target-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const targetRead: TargetRead = {
+        id: targetId,
+        value: targetPayload.value,
+        created_at: new Date().toISOString(),
+      };
+      ScanOrchestratorClient.targetMap.set(targetId, targetRead);
+      return targetRead;
+    }
+
+    return this.request<TargetRead>("/v1/targets", {
+      method: "POST",
+      body: targetPayload,
+      auth: "admin",
+    });
+  }
+
+  /**
+   * List Registered Targets with pagination (GET /v1/targets)
+   */
+  async listTargets(params?: PaginationParams): Promise<TargetRead[]> {
+    if (this.useMicroservices && ScanOrchestratorClient.targetMap.size > 0) {
+      return Array.from(ScanOrchestratorClient.targetMap.values());
+    }
+    const qs = buildQueryString(params as Record<string, unknown>);
+    return this.request<TargetRead[]>(`/v1/targets${qs}`, {
+      method: "GET",
+      auth: "operator",
+    });
+  }
+
+  /**
+   * Get Target Details by target ID (GET /v1/targets/{target_id})
+   */
+  async getTarget(targetId: string): Promise<TargetRead> {
+    if (this.useMicroservices) {
+      const local = ScanOrchestratorClient.targetMap.get(targetId);
+      if (local) return local;
+    }
+    return this.request<TargetRead>(`/v1/targets/${encodeURIComponent(targetId)}`, {
+      method: "GET",
+      auth: "operator",
+    });
+  }
+
+  // ============================================================================
+  // 3. DAST Scans (Dynamic Application Security Testing)
+  // ============================================================================
+
+  /**
+   * Queue a new DAST scan job (POST /v1/scans)
+   */
+  async submitScan(
+    scan: ScanCreate,
+    idempotencyKey?: string,
+  ): Promise<ScanRead> {
+    if (this.useMicroservices) {
+      if (isSastProfile(scan.profile)) {
+        return this.submitSastScan(
+          { target_id: scan.target_id, profile: scan.profile as SastProfile },
+          idempotencyKey,
+        );
+      }
+      const target = ScanOrchestratorClient.targetMap.get(scan.target_id);
+      const customUrl = (scan as { target_url?: string; target_value?: string }).target_url ||
+                        (scan as { target_url?: string; target_value?: string }).target_value;
+      const rawTarget = customUrl || target?.value || scan.target_id;
+      const targetUrl = rawTarget.startsWith("http://") || rawTarget.startsWith("https://")
+        ? rawTarget
+        : `https://${rawTarget}`;
+
+      // SSRF preflight
+      const validation = await this.dastClient.validateTarget(targetUrl);
+      const isSafe = validation.safe_to_scan ?? validation.valid ?? validation.ok ?? false;
+      if (!isSafe) {
+        throw new Error(
+          `Target ${targetUrl} is not safe to scan: ${validation.message || validation.reason || validation.code || "Restricted address"}`,
+        );
+      }
+
+      const { tool, mode } = resolveDastProfile(scan.profile);
+      const res = await this.dastClient.submitScan({
+        target_url: targetUrl,
+        mode,
+        tools: tool ? [tool] : undefined,
+      });
+
+      ScanOrchestratorClient.scanMetaMap.set(res.job_id, {
+        targetId: scan.target_id,
+        profile: scan.profile,
+        targetValue: targetUrl,
+        kind: "dast",
+      });
+
+      return {
+        id: res.job_id,
+        target_id: scan.target_id,
+        profile: scan.profile,
+        status: "queued",
+        controller_job_id: res.job_id,
+        failure_reason: null,
+        created_at: new Date().toISOString(),
+      };
+    }
+
+    return this.request<ScanRead>("/v1/scans", {
+      method: "POST",
+      body: scan,
+      idempotencyKey,
+      auth: "operator",
+    });
+  }
+
+  /**
+   * List DAST scans with optional filters & pagination (GET /v1/scans)
+   */
+  async listScans(params?: ListScansParams): Promise<ScanRead[]> {
+    if (this.useMicroservices) {
+      try {
+        const res = await this.dastClient.listScans({
+          limit: params?.limit,
+          offset: params?.offset,
+        });
+        if (Array.isArray(res.items)) {
+          return res.items.map((job) => {
+            const meta = ScanOrchestratorClient.scanMetaMap.get(job.job_id);
+            const status: ScanStatus =
+              job.status === "completed"
+                ? "completed"
+                : job.status === "failed" || job.status === "cancelled"
+                  ? "failed"
+                  : "running";
+            return {
+              id: job.job_id,
+              target_id: meta?.targetId || params?.target_id || "target-dast",
+              profile: meta?.profile || "dast-scan",
+              status,
+              controller_job_id: job.job_id,
+              failure_reason: job.error_message || null,
+              created_at: job.created_at || new Date().toISOString(),
+            };
+          });
+        }
+      } catch (err: unknown) {
+        if (
+          err instanceof SecurityServiceApiError &&
+          (err.statusCode === 401 || err.code === "session_expired" || err.code === "sast_auth_failed")
+        ) {
+          throw err;
+        }
+        if (err && typeof err === "object" && "statusCode" in err && (err as { statusCode: number }).statusCode === 401) {
+          throw err;
+        }
+        this.logger.debug(
+          `dastClient.listScans not available or failed, falling back to local scanMetaMap: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+
+      const localScans: ScanRead[] = [];
+      for (const [jobId, meta] of ScanOrchestratorClient.scanMetaMap.entries()) {
+        if (meta.kind === "dast") {
+          if (!params?.target_id || meta.targetId === params.target_id) {
+            localScans.push({
+              id: jobId,
+              target_id: meta.targetId,
+              profile: meta.profile,
+              status: "running",
+              controller_job_id: jobId,
+              failure_reason: null,
+              created_at: new Date().toISOString(),
+            });
+          }
+        }
+      }
+      return localScans;
+    }
+
+    const qs = buildQueryString(params as Record<string, unknown>);
+    return this.request<ScanRead[]>(`/v1/scans${qs}`, {
+      method: "GET",
+      auth: "operator",
+    });
+  }
+
+  /**
+   * Retrieve the status of a DAST scan job (GET /v1/scans/{scan_id})
+   */
+  async getScan(scanId: string): Promise<ScanRead> {
+    if (this.useMicroservices && (scanId.startsWith("job_") || ScanOrchestratorClient.scanMetaMap.has(scanId))) {
+      try {
+        const job = await this.dastClient.getJob(scanId);
+        const meta = ScanOrchestratorClient.scanMetaMap.get(scanId);
+        const status: ScanStatus =
+          job.status === "completed"
+            ? "completed"
+            : job.status === "failed"
+              ? "failed"
+              : job.status === "cancelled"
+                ? "cancelled"
+                : "running";
+
+        return {
+          id: job.job_id,
+          target_id: meta?.targetId || "target-dast",
+          profile: meta?.profile || "dast-scan",
+          status,
+          controller_job_id: job.job_id,
+          failure_reason: job.error_message || null,
+          created_at: job.created_at || new Date().toISOString(),
+        };
+      } catch (err: unknown) {
+        const meta = ScanOrchestratorClient.scanMetaMap.get(scanId);
+        if (meta) {
+          return {
+            id: scanId,
+            target_id: meta.targetId,
+            profile: meta.profile,
+            status: "running",
+            controller_job_id: scanId,
+            failure_reason: err instanceof Error ? err.message : String(err),
+            created_at: new Date().toISOString(),
+          };
+        }
+        throw err;
+      }
+    }
+
+    return this.request<ScanRead>(`/v1/scans/${encodeURIComponent(scanId)}`, {
+      method: "GET",
+      auth: "operator",
+    });
+  }
+
+  /**
+   * Request cancellation of a queued or running DAST scan job (POST /v1/scans/{scan_id}/cancel)
+   */
+  async cancelScan(scanId: string): Promise<ScanRead> {
+    return this.request<ScanRead>(
+      `/v1/scans/${encodeURIComponent(scanId)}/cancel`,
+      {
+        method: "POST",
+        auth: "operator",
+      },
+    );
+  }
+
+  /**
+   * Retry a failed or cancelled DAST scan job (POST /v1/scans/{scan_id}/retry)
+   */
+  async retryScan(scanId: string): Promise<ScanRead> {
+    return this.request<ScanRead>(
+      `/v1/scans/${encodeURIComponent(scanId)}/retry`,
+      {
+        method: "POST",
+        auth: "operator",
+      },
+    );
+  }
+
+  /**
+   * Get the parsed results, summary, and artifacts of a DAST scan (GET /v1/scans/{scan_id}/result)
+   */
+  async getScanResult(scanId: string): Promise<ScanResultRead> {
+    if (this.useMicroservices && (scanId.startsWith("job_") || ScanOrchestratorClient.scanMetaMap.has(scanId))) {
+      try {
+        const job = await this.dastClient.getJob(scanId);
+        const meta = ScanOrchestratorClient.scanMetaMap.get(scanId);
+        const targetUrl = meta?.targetValue || job.target_url || "target";
+        const rawFindings = Array.isArray(job.findings) ? job.findings : [];
+        const summaryObj = (job.summary && typeof job.summary === "object" ? job.summary : {}) as Record<string, unknown>;
+        const totalFindings = typeof summaryObj.total_findings === "number" ? summaryObj.total_findings : rawFindings.length;
+
+        const summary = {
+          total_rules_evaluated: totalFindings,
+          risk_summary: {
+            critical: typeof summaryObj.critical === "number" ? summaryObj.critical : 0,
+            high: typeof summaryObj.high === "number" ? summaryObj.high : 0,
+            medium: typeof summaryObj.medium === "number" ? summaryObj.medium : 0,
+            low: typeof summaryObj.low === "number" ? summaryObj.low : 0,
+            info: typeof summaryObj.info === "number" ? summaryObj.info : 0,
+            total: totalFindings,
+          },
+          findings: rawFindings.map((f, i) => ({
+            id: f.id || `dast-${job.job_id}-${i + 1}`,
+            title: f.title || "Security Finding",
+            severity: (f.severity || "medium").toLowerCase(),
+            description: f.description || f.title || "Finding detected by DAST engine",
+            host: f.target_url || targetUrl,
+            template_id: f.rule_id || f.vulnerability_id || f.tool_name || "dast-vuln",
+            cwe: f.cwe_id || undefined,
+            remediation: f.remediation || f.solution || undefined,
+          })),
+          technologies: Array.isArray(summaryObj.technologies) ? (summaryObj.technologies as string[]) : [],
+        };
+
+        return {
+          id: `result-${job.job_id}`,
+          scan_job_id: job.job_id,
+          summary,
+          created_at: job.created_at || new Date().toISOString(),
+          artifact: null,
+          error_logs: job.error_message || null,
+        };
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        this.logger.error(
+          `getScanResult failed for ${scanId}: ${errMsg}`,
+          err instanceof Error ? err : undefined,
+        );
+        return {
+          id: `result-${scanId}`,
+          scan_job_id: scanId,
+          summary: {
+            total_rules_evaluated: 0,
+            risk_summary: { critical: 0, high: 0, medium: 0, low: 0, info: 0, total: 0 },
+            findings: [],
+            technologies: [],
+          },
+          created_at: new Date().toISOString(),
+          artifact: null,
+          error_logs: errMsg,
+        };
+      }
+    }
+
+    return this.request<ScanResultRead>(
+      `/v1/scans/${encodeURIComponent(scanId)}/result`,
+      {
+        method: "GET",
+        auth: "operator",
+      },
+    );
+  }
+
+  /**
+   * Polls a DAST scan job until it reaches a terminal status ('completed', 'failed', 'cancelled')
+   */
+  async pollScanUntilComplete(
+    scanId: string,
+    options: PollScanOptions = {},
+  ): Promise<{ scan: ScanRead; result?: ScanResultRead }> {
+    const meta = ScanOrchestratorClient.scanMetaMap.get(scanId);
+    const kind = options.kind ?? meta?.kind ?? "dast";
+    const [polled] = await this.pollScansUntilComplete([scanId], {
+      ...options,
+      kind,
+      onProgress: (scans) => {
+        if (scans[0]) options.onProgress?.(scans[0]);
+      },
+    });
+    return polled!;
+  }
+
+  /**
+   * Polls several scans (all DAST or all SAST) until every one is terminal, and
+   * fetches each result once. Compared with polling each scan in its own loop:
+   * - one list request per tick covers every scan of a run when `targetId` is given;
+   * - the interval backs off (x1.5, jittered, capped) while no status changes,
+   *   and snaps back to `intervalMs` when one does;
+   * - rate limiting (honouring Retry-After), timeouts, network errors and
+   *   deploy-time 502/503/504s are retried instead of aborting the whole run.
+   * Results are returned in `scanIds` order.
+   */
+  async pollScansUntilComplete(
+    scanIds: readonly string[],
+    options: PollScansOptions = {},
+  ): Promise<PolledScan[]> {
+    const kind = options.kind ?? "dast";
+    const baseIntervalMs = options.intervalMs || 2000;
+    const maxIntervalMs = Math.max(options.maxIntervalMs || 10000, baseIntervalMs);
+    const maxWaitMs = options.maxWaitMs || DEFAULT_POLL_MAX_WAIT_MS;
+    const startTime = Date.now();
+
+    const latest = new Map<string, ScanRead>();
+    const finished = new Map<string, PolledScan>();
+    let intervalMs = baseIntervalMs;
+    let consecutiveErrors = 0;
+
+    while (Date.now() - startTime < maxWaitMs) {
+      let waitMs = intervalMs;
+      try {
+        const pending = scanIds.filter((id) => !finished.has(id));
+        const scans = await this.fetchScanStatuses(pending, kind, options.targetId);
+        consecutiveErrors = 0;
+
+        let changed = false;
+        for (const scan of scans) {
+          if (latest.get(scan.id)?.status !== scan.status) changed = true;
+          latest.set(scan.id, scan);
+        }
+        options.onProgress?.(
+          scanIds.flatMap((id) => {
+            const scan = latest.get(id);
+            return scan ? [scan] : [];
+          }),
+        );
+
+        for (const scan of scans) {
+          if (TERMINAL_SCAN_STATUSES.has(scan.status)) {
+            finished.set(scan.id, { scan, result: await this.fetchTerminalResult(scan, kind) });
+          }
+        }
+        if (finished.size === scanIds.length) {
+          return scanIds.map((id) => finished.get(id)!);
+        }
+
+        intervalMs = changed ? baseIntervalMs : Math.min(intervalMs * 1.5, maxIntervalMs);
+        waitMs = intervalMs;
+      } catch (err) {
+        consecutiveErrors += 1;
+        if (!isTransientOrchestratorError(err) || consecutiveErrors > MAX_CONSECUTIVE_POLL_ERRORS) {
+          throw err;
+        }
+        intervalMs = Math.min(intervalMs * 2, maxIntervalMs);
+        waitMs = Math.max(err.retryAfterMs ?? 0, intervalMs);
+        this.logger.warn(
+          `Transient orchestrator error while polling (${err.code}); retrying in ~${waitMs}ms`,
+        );
+      }
+      await sleep(withJitter(waitMs));
+    }
+
+    const unfinished = scanIds.filter((id) => !finished.has(id));
+    const label = kind === "sast" ? "SAST scan" : "scan";
+    throw new VercelError(
+      `[ScanOrchestratorClient] Timed out waiting for ${label} ${unfinished.join(", ")} after ${maxWaitMs}ms`,
+      {
+        code: "scan_timeout",
+        scope: "orchestrator",
+        reason: `${label} job(s) ${unfinished.join(", ")} remained in non-terminal state after ${maxWaitMs}ms`,
+        hint: "The scan might still be running, or a backend deployment/restart interrupted it mid-scan without reporting failure in time -- retrying usually resolves this.",
+        fix: "Retry polling with a higher maxWaitMs or check controller logs.",
+        link: DEFAULT_ORCHESTRATOR_URL,
+      },
+    );
+  }
+
+  private async fetchScanStatuses(
+    scanIds: readonly string[],
+    kind: "dast" | "sast",
+    targetId?: string,
+  ): Promise<ScanRead[]> {
+    const getOne = (id: string) => {
+      const meta = ScanOrchestratorClient.scanMetaMap.get(id);
+      const resolvedKind = meta?.kind ?? kind;
+      return resolvedKind === "sast" ? this.getSastScan(id) : this.getScan(id);
+    };
+    if (!targetId || scanIds.length < 2) {
+      const scans: ScanRead[] = [];
+      for (const id of scanIds) scans.push(await getOne(id));
+      return scans;
+    }
+
+    const params = { target_id: targetId, limit: 200 };
+    let listed: ScanRead[] = [];
+    try {
+      const raw = kind === "sast" ? await this.listSastScans(params) : await this.listScans(params);
+      if (Array.isArray(raw)) {
+        listed = raw;
+      } else if (raw && typeof raw === "object" && Array.isArray((raw as { items?: unknown[] }).items)) {
+        const items = (raw as { items: Record<string, unknown>[] }).items;
+        listed = items.map((item) => ({
+          id: String(item["job_id"] || item["id"] || ""),
+          target_id: String(item["target_id"] || targetId),
+          profile: String(item["profile"] || `${kind}-scan`),
+          status:
+            item["status"] === "completed"
+              ? "completed"
+              : item["status"] === "failed" || item["status"] === "expired"
+                ? "failed"
+                : "running",
+          controller_job_id: ((item["job_id"] || item["id"]) as string) || null,
+          failure_reason: (item["error_message"] as string) || null,
+          created_at: (item["created_at"] as string) || new Date().toISOString(),
+        }));
+      }
+    } catch (err: unknown) {
+      this.logger.warn(
+        `fetchScanStatuses batch query for target ${targetId} failed, falling back to individual lookups: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
+    const wanted = new Set(scanIds);
+    const scans: ScanRead[] = Array.isArray(listed)
+      ? listed.filter((scan) => scan && wanted.has(scan.id))
+      : [];
+    // Anything the list didn't return (e.g. pushed past the page by newer scans on
+    // the same target, or missing target_id) is still fetched individually, so no scan is ever dropped.
+    const seen = new Set(scans.map((scan) => scan.id));
+    for (const id of scanIds) {
+      if (!seen.has(id)) {
+        scans.push(await getOne(id));
+      }
+    }
+    return scans;
+  }
+
+  private async fetchTerminalResult(
+    scan: ScanRead,
+    kind: "dast" | "sast",
+  ): Promise<ScanResultRead | undefined> {
+    const meta = ScanOrchestratorClient.scanMetaMap.get(scan.id);
+    const resolvedKind = meta?.kind ?? kind;
+    const getResult = (id: string) =>
+      resolvedKind === "sast" ? this.getSastScanResult(id) : this.getScanResult(id);
+    if (scan.status === "completed") return getResult(scan.id);
+    try {
+      return await getResult(scan.id);
+    } catch {
+      // No result object is persisted for most failures/cancellations -- acceptable.
+      return undefined;
+    }
+  }
+
+  // ============================================================================
+  // 4. SAST Scans (Static Application Security Testing)
+  // ============================================================================
+
+  /**
+   * List available SAST profiles, engines, language capabilities, and query bundles.
+   * Public endpoint (no authentication required).
+   */
+  async getSastProfiles(): Promise<SastProfilesResponse> {
+    if (this.useMicroservices) {
+      try {
+        const cat = await this.sastClient.getTools();
+        return {
+          sast_profiles: cat.tools.map((t) => ({
+            profile: t.id as SastProfile,
+            engine: t.name,
+            languages: ["*"],
+            capabilities: t.modes ? [...t.modes] : ["sast"],
+            purpose: t.description || t.category || "SAST analysis",
+          })),
+        };
+      } catch {
+        const defaults: Array<{ name: string; id: SastProfile; purpose: string }> = [
+          { name: "Semgrep", id: "semgrep", purpose: "Fast multi-language AST vulnerability scanning" },
+          { name: "Bearer", id: "bearer", purpose: "OWASP Top 10 and data privacy analysis" },
+          { name: "Bandit", id: "bandit", purpose: "Security linter for Python code" },
+          { name: "ESLint", id: "eslint", purpose: "JavaScript & TypeScript security rules" },
+          { name: "Gitleaks", id: "gitleaks", purpose: "Secret and credential detection in source code" },
+          { name: "TruffleHog", id: "trufflehog", purpose: "High-entropy secret and credential scanner" },
+        ];
+        return {
+          sast_profiles: defaults.map((d) => ({
+            profile: d.id,
+            engine: d.name,
+            languages: ["*"],
+            capabilities: ["sast"],
+            purpose: d.purpose,
+          })),
+        };
+      }
+    }
+    return this.request<SastProfilesResponse>("/v1/sast/profiles", {
+      method: "GET",
+      auth: "none",
+    });
+  }
+
+  /**
+   * Queue a new SAST code analysis job (POST /v1/sast/scans)
+   */
+  async submitSastScan(
+    scan: SASTScanCreate,
+    idempotencyKey?: string,
+  ): Promise<ScanRead> {
+    if (this.useMicroservices) {
+      const target = ScanOrchestratorClient.targetMap.get(scan.target_id);
+      const targetValue =
+        scan.workspace_path ||
+        scan.folder_path ||
+        target?.value ||
+        scan.target_id;
+      const isRepo =
+        targetValue.startsWith("http://") ||
+        targetValue.startsWith("https://") ||
+        targetValue.startsWith("git@") ||
+        targetValue.endsWith(".git");
+
+      const profile = scan.profile || "sast-semgrep";
+      const isActive =
+        profile === "sast-active" ||
+        profile.includes("active") ||
+        profile === "sast-deep";
+
+      let jobId: string;
+      if (isRepo) {
+        const res = await this.sastClient.submitRepoScan({
+          repo_url: targetValue,
+          target_id: scan.target_id,
+          mode: isActive ? "active" : "passive",
+        });
+        jobId = res.job_id;
+      } else {
+        let zipData: Uint8Array;
+        if (scan.zipData) {
+          zipData = scan.zipData;
+        } else if (scan.files && scan.files.length > 0) {
+          const entries = scan.files.map((f) => ({
+            path: f.path,
+            data: new TextEncoder().encode(f.content),
+          }));
+          zipData = buildZipArchive(entries);
+        } else {
+          try {
+            const packaged = packageWorkspaceDirectory(targetValue);
+            if (packaged.stats.includedFiles === 0) {
+              const dummyEntry = {
+                path: "README.md",
+                data: new TextEncoder().encode(
+                  `# Codebase Scope: ${targetValue}\nScanned with Codefy SAST at ${new Date().toISOString()}`,
+                ),
+              };
+              zipData = buildZipArchive([dummyEntry]);
+            } else {
+              zipData = packaged.zipData;
+            }
+          } catch {
+            // If directory packaging is not possible in current environment, build a minimal valid zip archive
+            const dummyEntry = {
+              path: "README.md",
+              data: new TextEncoder().encode(
+                `# Codebase Scope: ${targetValue}\nScanned with Codefy SAST at ${new Date().toISOString()}`,
+              ),
+            };
+            zipData = buildZipArchive([dummyEntry]);
+          }
+        }
+        const res = isActive
+          ? await this.sastClient.submitActiveScan(zipData, "source.zip", scan.target_id)
+          : await this.sastClient.submitPassiveScan(zipData, "source.zip", scan.target_id);
+        jobId = res.job_id;
+      }
+
+      ScanOrchestratorClient.scanMetaMap.set(jobId, {
+        targetId: scan.target_id,
+        profile,
+        targetValue,
+        kind: "sast",
+      });
+
+      return {
+        id: jobId,
+        target_id: scan.target_id,
+        profile,
+        status: "queued",
+        controller_job_id: jobId,
+        failure_reason: null,
+        created_at: new Date().toISOString(),
+      };
+    }
+
+    return this.request<ScanRead>("/v1/sast/scans", {
+      method: "POST",
+      body: scan,
+      idempotencyKey,
+      auth: "operator",
+    });
+  }
+
+  /**
+   * List SAST scans with optional filters & pagination (GET /v1/sast/scans)
+   */
+  async listSastScans(params?: ListSastScansParams): Promise<ScanRead[]> {
+    if (this.useMicroservices) {
+      try {
+        const res = await this.sastClient.listScans({
+          target_id: params?.target_id,
+          limit: params?.limit,
+          offset: params?.offset,
+          status: params?.status,
+        });
+        return res.items.map((job) => {
+          const meta = ScanOrchestratorClient.scanMetaMap.get(job.job_id);
+          const status: ScanStatus =
+            job.status === "completed"
+              ? "completed"
+              : job.status === "failed" || job.status === "expired"
+                ? "failed"
+                : "running";
+          return {
+            id: job.job_id,
+            target_id: meta?.targetId || job.target_id || params?.target_id || "target-source",
+            profile: meta?.profile || `sast-${job.mode || "scan"}`,
+            status,
+            controller_job_id: job.job_id,
+            failure_reason: job.error_message || null,
+            created_at: job.created_at || new Date().toISOString(),
+          };
+        });
+      } catch (err: unknown) {
+        this.logger.warn(
+          `listSastScans via microservice failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        return [];
+      }
+    }
+
+    const qs = buildQueryString(params as Record<string, unknown>);
+    const raw = await this.request<unknown>(`/v1/sast/scans${qs}`, {
+      method: "GET",
+      auth: "operator",
+    });
+
+    if (Array.isArray(raw)) {
+      return raw as ScanRead[];
+    }
+    if (raw && typeof raw === "object" && Array.isArray((raw as { items?: unknown[] }).items)) {
+      const items = (raw as { items: Record<string, unknown>[] }).items;
+      return items.map((item) => ({
+        id: String(item["job_id"] || item["id"] || ""),
+        target_id: String(item["target_id"] || params?.target_id || "target-source"),
+        profile: String(item["profile"] || `sast-${item["mode"] || "scan"}`),
+        status:
+          item["status"] === "completed"
+            ? "completed"
+            : item["status"] === "failed" || item["status"] === "expired"
+              ? "failed"
+              : "running",
+        controller_job_id: ((item["job_id"] || item["id"]) as string) || null,
+        failure_reason: (item["error_message"] as string) || null,
+        created_at: (item["created_at"] as string) || new Date().toISOString(),
+      }));
+    }
+
+    return [];
+  }
+
+  /**
+   * Retrieve the status of a SAST scan job (GET /v1/sast/scans/{scan_id})
+   */
+  async getSastScan(scanId: string): Promise<ScanRead> {
+    if (this.useMicroservices && (scanId.startsWith("job_") || ScanOrchestratorClient.scanMetaMap.has(scanId))) {
+      const job = await this.sastClient.getJob(scanId);
+      const meta = ScanOrchestratorClient.scanMetaMap.get(scanId);
+      const status: ScanStatus =
+        job.status === "completed"
+          ? "completed"
+          : (job.status === "failed" || job.status === "expired")
+            ? "failed"
+            : "running";
+
+      return {
+        id: job.job_id,
+        target_id: meta?.targetId || "target-source",
+        profile: meta?.profile || "sast-scan",
+        status,
+        controller_job_id: job.job_id,
+        failure_reason: job.error_message || null,
+        created_at: job.created_at || new Date().toISOString(),
+      };
+    }
+
+    return this.request<ScanRead>(
+      `/v1/sast/scans/${encodeURIComponent(scanId)}`,
+      {
+        method: "GET",
+        auth: "operator",
+      },
+    );
+  }
+
+  /**
+   * Request cancellation of a queued or running SAST scan job (POST /v1/sast/scans/{scan_id}/cancel)
+   */
+  async cancelSastScan(scanId: string): Promise<ScanRead> {
+    return this.request<ScanRead>(
+      `/v1/sast/scans/${encodeURIComponent(scanId)}/cancel`,
+      {
+        method: "POST",
+        auth: "operator",
+      },
+    );
+  }
+
+  /**
+   * Retry a failed or cancelled SAST scan job (POST /v1/sast/scans/{scan_id}/retry)
+   */
+  async retrySastScan(scanId: string): Promise<ScanRead> {
+    return this.request<ScanRead>(
+      `/v1/sast/scans/${encodeURIComponent(scanId)}/retry`,
+      {
+        method: "POST",
+        auth: "operator",
+      },
+    );
+  }
+
+  /**
+   * Get the parsed results, summary, and findings of a SAST scan (GET /v1/sast/scans/{scan_id}/result)
+   */
+  async getSastScanResult(scanId: string): Promise<ScanResultRead> {
+    if (this.useMicroservices && (scanId.startsWith("job_") || ScanOrchestratorClient.scanMetaMap.has(scanId))) {
+      try {
+        const job = await this.sastClient.getJob(scanId);
+        const meta = ScanOrchestratorClient.scanMetaMap.get(scanId);
+
+        const rawFindings = Array.isArray(job.findings) ? job.findings : [];
+        const totalFindings = job.summary?.total_findings ?? rawFindings.length;
+
+        const summary = {
+          total_rules_evaluated: totalFindings,
+          risk_summary: {
+            critical: job.summary?.critical ?? 0,
+            high: job.summary?.high ?? 0,
+            medium: job.summary?.medium ?? 0,
+            low: job.summary?.low ?? 0,
+            info: 0,
+            total: totalFindings,
+          },
+          findings: rawFindings.map((f, i) => {
+            const lineStart =
+              typeof f.line_start === "number"
+                ? f.line_start
+                : f.line_start
+                  ? Number(f.line_start) || 1
+                  : 1;
+            return {
+              id: f.id || `sast-${job.job_id}-${i + 1}`,
+              code: f.vulnerability_id || f.tool_name || "sast-vuln",
+              severity: (f.severity || "medium").toLowerCase(),
+              title: f.title || f.vulnerability_id || "Security Finding",
+              description: f.description || f.title || "Vulnerability detected by SAST engine",
+              evidence: {
+                file: f.file_path,
+                line: lineStart,
+                detector: f.tool_name,
+                check_id: f.vulnerability_id,
+                cwe: f.cwe_id ? [f.cwe_id] : undefined,
+              },
+              remediation: f.remediation || undefined,
+            };
+          }),
+        };
+
+        return {
+          id: `result-${job.job_id}`,
+          scan_job_id: job.job_id,
+          summary,
+          created_at: job.created_at || new Date().toISOString(),
+          artifact: null,
+          error_logs: job.error_message || null,
+        };
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        this.logger.error(
+          `getSastScanResult failed for ${scanId}: ${errMsg}`,
+          err instanceof Error ? err : undefined,
+        );
+        return {
+          id: `result-${scanId}`,
+          scan_job_id: scanId,
+          summary: {
+            total_rules_evaluated: 0,
+            risk_summary: { critical: 0, high: 0, medium: 0, low: 0, info: 0, total: 0 },
+            findings: [],
+          },
+          created_at: new Date().toISOString(),
+          artifact: null,
+          error_logs: errMsg,
+        };
+      }
+    }
+
+    return this.request<ScanResultRead>(
+      `/v1/sast/scans/${encodeURIComponent(scanId)}/result`,
+      {
+        method: "GET",
+        auth: "operator",
+      },
+    );
+  }
+
+  /**
+   * Polls a SAST scan job until it reaches a terminal status ('completed', 'failed', 'cancelled')
+   * and optionally fetches the final scan result.
+   */
+  async pollSastScanUntilComplete(
+    scanId: string,
+    options: PollScanOptions = {},
+  ): Promise<{ scan: ScanRead; result?: ScanResultRead }> {
+    const [polled] = await this.pollScansUntilComplete([scanId], {
+      ...options,
+      kind: "sast",
+      onProgress: (scans) => {
+        if (scans[0]) options.onProgress?.(scans[0]);
+      },
+    });
+    return polled!;
+  }
+
+  // ============================================================================
+  // 5. Audit & Compliance Endpoints (Admin Required)
+  // ============================================================================
+
+  /**
+   * List recent security audit events (GET /v1/audit-events)
+   */
+  async listAuditEvents(): Promise<AuditEventRead[]> {
+    try {
+      const res = await this.request<AuditEventRead[] | { items: AuditEventRead[] }>("/v1/audit-events", {
+        method: "GET",
+        auth: "admin",
+      });
+      if (Array.isArray(res)) return res;
+      if (
+        res &&
+        typeof res === "object" &&
+        "items" in res &&
+        Array.isArray((res as { items: AuditEventRead[] }).items)
+      ) {
+        return (res as { items: AuditEventRead[] }).items;
+      }
+      return [];
+    } catch (err: unknown) {
+      if (this.useMicroservices) {
+        try {
+          const res = await this.sastClient.listAuditEvents();
+          return res.items.map((it) => ({
+            id: it.id,
+            action: it.action || it.event_type,
+            resource_type: it.target_id ? "target" : (it.job_id ? "job" : "system"),
+            resource_id: it.target_id || it.job_id || it.id,
+            detail: typeof it.details === "object" ? JSON.stringify(it.details) : String(it.details ?? ""),
+            created_at: it.timestamp,
+          }));
+        } catch {
+          return [];
+        }
+      }
+      throw err;
+    }
+  }
+
+  // ============================================================================
+  // 6. Dashboard & Statistics Endpoints (Operator / Admin)
+  // ============================================================================
+
+  /**
+   * Get Platform Dashboard Statistics across targets, scans, and profiles (GET /v1/stats)
+   */
+  async getStats(): Promise<PlatformStatsRead> {
+    return this.request<PlatformStatsRead>("/v1/stats", {
+      method: "GET",
+      auth: "operator",
+    });
+  }
+
+  // ============================================================================
+  // 7. Internal Controller Protocol (Private HMAC)
+  // ============================================================================
+
+  /**
+   * Claim next queued job from the orchestrator (POST /v1/internal/controller/jobs/claim)
+   */
+  async claimControllerJob(): Promise<ControllerJobClaim | null> {
+    return this.request<ControllerJobClaim | null>(
+      "/v1/internal/controller/jobs/claim",
+      {
+        method: "POST",
+        body: null,
+        auth: "controller",
+      },
+    );
+  }
+
+  /**
+   * Report controller job completion with findings and risk summary (POST /v1/internal/controller/jobs/{scan_id}/complete)
+   */
+  async completeControllerJob(
+    scanId: string,
+    payload: ControllerJobCompletePayload,
+  ): Promise<ScanResultRead> {
+    return this.request<ScanResultRead>(
+      `/v1/internal/controller/jobs/${encodeURIComponent(scanId)}/complete`,
+      {
+        method: "POST",
+        body: payload,
+        auth: "controller",
+      },
+    );
+  }
+
+  /**
+   * Report controller job failure with descriptive reason (POST /v1/internal/controller/jobs/{scan_id}/fail)
+   */
+  async failControllerJob(
+    scanId: string,
+    payload: ControllerJobFailPayload,
+  ): Promise<ScanRead> {
+    return this.request<ScanRead>(
+      `/v1/internal/controller/jobs/${encodeURIComponent(scanId)}/fail`,
+      {
+        method: "POST",
+        body: payload,
+        auth: "controller",
+      },
+    );
+  }
+
+  /**
+   * Query status of a controller job (GET /v1/internal/controller/jobs/{scan_id}/status)
+   */
+  async getControllerJobStatus(scanId: string): Promise<ControllerJobStatus> {
+    return this.request<ControllerJobStatus>(
+      `/v1/internal/controller/jobs/${encodeURIComponent(scanId)}/status`,
+      {
+        method: "GET",
+        auth: "controller",
+      },
+    );
+  }
+
+  // ============================================================================
+  // 8. Canonical Issue Graph Store & Metrics (BugBound V3)
+  // ============================================================================
+
+  get sast(): SastClient {
+    return this.sastClient;
+  }
+
+  async listCanonicalIssues(params?: IssueListParams): Promise<IssueListResponse> {
+    return this.sastClient.listIssues(params);
+  }
+
+  async getCanonicalIssueMetrics(repoId?: string): Promise<IssueMetricsSummaryResponse> {
+    return this.sastClient.getIssueMetricsSummary(repoId);
+  }
+
+  async getCanonicalIssue(issueId: string): Promise<CanonicalIssueDetailResponse> {
+    return this.sastClient.getIssue(issueId);
+  }
+
+  async transitionCanonicalIssue(
+    issueId: string,
+    targetStatus: IssueStatus,
+    reason?: string,
+    actor?: string,
+  ): Promise<CanonicalIssue> {
+    return this.sastClient.transitionIssue(issueId, targetStatus, reason, actor);
+  }
+
+  async grantRiskAcceptance(
+    issueId: string,
+    acceptedBy: string,
+    reason: string,
+    expiresDays?: number,
+  ): Promise<CanonicalIssue> {
+    return this.sastClient.grantRiskAcceptance(issueId, acceptedBy, reason, expiresDays);
+  }
+
+  async deleteCanonicalIssue(issueId: string): Promise<{ message: string }> {
+    return this.sastClient.deleteIssue(issueId);
+  }
+
+  // ============================================================================
+  // 9. DAST Services & Target Validation
+  // ============================================================================
+
+  get dast(): DastClient {
+    return this.dastClient;
+  }
+
+  getDastClient(): DastClient {
+    return this.dastClient;
+  }
+
+  /**
+   * Pre-flight SSRF target validation checking for private IP / loopback / cloud metadata.
+   */
+  async validateDastTarget(targetUrl: string): Promise<DastValidateTargetResponse> {
+    return this.dastClient.validateTarget(targetUrl);
+  }
+
+  /**
+   * Retrieves catalog of supported DAST tools and their operational modes.
+   */
+  async getDastTools(): Promise<DastToolCatalogResponse> {
+    return this.dastClient.getTools();
+  }
+
+  /**
+   * Exports DAST job findings formatted as SARIF or JSON.
+   */
+  async exportDastJob(jobId: string, format: "sarif" | "json" = "sarif"): Promise<unknown> {
+    return this.dastClient.exportFindings(jobId, format);
+  }
+}

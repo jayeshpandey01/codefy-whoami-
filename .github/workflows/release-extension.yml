@@ -1,0 +1,102 @@
+name: release-extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { target: win32-x64, os: windows-latest }
+          - { target: win32-arm64, os: windows-latest, cpu: arm64 }
+          - { target: darwin-arm64, os: macos-latest }
+          - { target: darwin-x64, os: macos-13 }
+          - { target: linux-x64, os: ubuntu-latest }
+          - { target: linux-arm64, os: ubuntu-24.04-arm }
+          - { target: alpine-x64, os: ubuntu-latest, libc: musl }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies (target platform binaries)
+        run: >
+          pnpm install --frozen-lockfile
+          ${{ matrix.cpu && format('--config.supportedArchitectures.cpu={0}', matrix.cpu) || '' }}
+          ${{ matrix.libc && format('--config.supportedArchitectures.libc={0}', matrix.libc) || '' }}
+
+      - run: pnpm version:sync
+
+      - run: pnpm turbo build --filter=codefy-whoami...
+
+      - run: pnpm --filter codefy-whoami run package ${{ matrix.target }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ matrix.target }}
+          path: dist-vsix/*.vsix
+
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: vsix-*
+          path: vsix
+          merge-multiple: true
+
+      - run: |
+          if [ -n "${{ secrets.VSCE_PAT }}" ]; then
+            for f in vsix/*.vsix; do
+              echo "Publishing $f to VS Code Marketplace..."
+              npx -y @vscode/vsce publish --packagePath "$f"
+            done
+          else
+            echo "Skipping VS Code Marketplace publish: VSCE_PAT secret not configured."
+          fi
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - run: |
+          if [ -n "${{ secrets.OVSX_PAT }}" ]; then
+            for f in vsix/*.vsix; do
+              echo "Publishing $f to Open VSX..."
+              npx -y ovsx publish --packagePath "$f"
+            done
+          else
+            echo "Skipping Open VSX publish: OVSX_PAT secret not configured."
+          fi
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+      - run: gh release upload "${{ inputs.tag || github.ref_name }}" vsix/*.vsix --repo "${{ github.repository }}" --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,49 @@
+/* ============================================================================
+   Materials
+   ----------------------------------------------------------------------------
+   Translucency belongs only to the floating, functional layer -- menus,
+   popovers, the command palette, the graph detail card and zoom controls --
+   never to content (HIG materials.md: "Don't use Liquid Glass in the content
+   layer"). Everything in the content layer is a solid token surface.
+   ========================================================================== */
+
+.material-floating {
+  background-color: color-mix(in srgb, var(--color-surface-elevated) 84%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-popover);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .material-floating {
+    background-color: var(--color-surface-elevated);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .material-floating {
+    background-color: var(--color-surface-elevated);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 1px solid var(--color-control-border);
+  }
+}
+
+/* Legacy class names still used by the host shells. Kept as solid
+   appearance-aware surfaces until the shell moves to WorkbenchLayout. */
+.dark-glass-panel {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-lg);
+}
+.dark-glass-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-lg);
+}
+.dark-glass-capsule {
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-separator);
+  border-radius: 9999px;
+}

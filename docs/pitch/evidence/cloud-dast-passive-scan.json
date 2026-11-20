@@ -1,0 +1,70 @@
+{
+  "job_id": "job_dast_3cb96d83c252",
+  "target_id": null,
+  "target_url": "https://axtion.tech/",
+  "mode": "passive",
+  "status": "completed",
+  "summary": {
+    "total_findings": 2,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 2,
+    "info": 0,
+    "scanned_tools": [],
+    "duration_ms": 0
+  },
+  "created_at": "2026-11-20T16:37:12+00:00",
+  "completed_at": "1795192653",
+  "expires_at": "2026-11-21T16:37:12+00:00",
+  "duration_ms": 571,
+  "error_message": null,
+  "terminal_output": null,
+  "tool_errors": {},
+  "findings": [
+    {
+      "id": "FIND-f837226c",
+      "tool_name": "httpx",
+      "rule_id": "SEC_HEADER_MISSING_CSP",
+      "title": "Missing Content-Security-Policy (CSP) Header",
+      "severity": "LOW",
+      "cwe_id": "CWE-1021",
+      "owasp_category": "A05:2021-Security Misconfiguration",
+      "cvss_score": 4.3,
+      "target_url": "https://axtion.tech/",
+      "parameter": null,
+      "evidence": "Content-Security-Policy header is absent.",
+      "remediation": "Configure a restrictive Content-Security-Policy HTTP header.",
+      "fingerprint": "6ec4e09c93d9f2a0687709aa9a9b7fc4",
+      "corroborated_by": [
+        "httpx"
+      ],
+      "raw_output": null
+    },
+    {
+      "id": "FIND-a4a5ed60",
+      "tool_name": "httpx",
+      "rule_id": "SEC_HEADER_MISSING_XCTO",
+      "title": "Missing X-Content-Type-Options Header",
+      "severity": "LOW",
+      "cwe_id": "CWE-16",
+      "owasp_category": "A05:2021-Security Misconfiguration",
+      "cvss_score": 3.1,
+      "target_url": "https://axtion.tech/",
+      "parameter": null,
+      "evidence": "X-Content-Type-Options: nosniff is absent.",
+      "remediation": "Add 'X-Content-Type-Options: nosniff' header.",
+      "fingerprint": "2f1607adf64fdb7a4434c0216751344e",
+      "corroborated_by": [
+        "httpx"
+      ],
+      "raw_output": null
+    }
+  ],
+  "scanned_tools": [
+    "httpx",
+    "wafw00f",
+    "sslyze"
+  ],
+  "cached": false
+}

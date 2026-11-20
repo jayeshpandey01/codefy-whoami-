@@ -1,0 +1,135 @@
+{
+  "fx": 93.3461,
+  "assumptions": {
+    "cloud_scans_per_user_per_month": 8,
+    "llm_calls_per_user_per_month": 12,
+    "tokens_per_call": "4000 in / 1000 out",
+    "premium_model_share": 0.2,
+    "payment_fee": 0.02
+  },
+  "llm_per_call_inr": {
+    "flash-lite": 0.079,
+    "sonnet-5.5": 1.773,
+    "blended": 0.418
+  },
+  "scenarios": {
+    "A_MVP": {
+      "users": 10,
+      "cloud_scans": 80,
+      "llm_calls": 120,
+      "infra_usd": 112.25,
+      "infra_inr": 10478,
+      "llm_inr": 50,
+      "total_inr": 10528,
+      "annual_inr": 126337,
+      "cost_per_cloud_scan_inr": 131.6,
+      "cost_per_user_inr": 1052.8,
+      "cost_per_llm_analysis_inr": 0.418,
+      "paying (dev,startup,growth)": [
+        0,
+        0,
+        0
+      ],
+      "mrr_inr": 0,
+      "gross_margin": null,
+      "breakdown_inr": {
+        "Hosting (Render API 1c-2g)": 2334,
+        "Workers (Render 1c-2g x1)": 2334,
+        "Database (Render PG 0.5c-1g)": 1774,
+        "Redis (Render KV 256MB)": 933,
+        "Scanner compute (DO 2vCPU/4GB x1)": 2240,
+        "Edge proxy (Cloudflare Workers paid)": 467,
+        "Monitoring (Axiom/Sentry/UptimeRobot free)": 0,
+        "Storage (R2 free allowance)": 0,
+        "Domain (.tech $50.98/yr)": 397
+      }
+    },
+    "B_GROWTH": {
+      "users": 100,
+      "cloud_scans": 800,
+      "llm_calls": 1200,
+      "infra_usd": 279.25,
+      "infra_inr": 26067,
+      "llm_inr": 501,
+      "total_inr": 26568,
+      "annual_inr": 318814,
+      "cost_per_cloud_scan_inr": 33.21,
+      "cost_per_user_inr": 265.7,
+      "cost_per_llm_analysis_inr": 0.418,
+      "paying (dev,startup,growth)": [
+        5,
+        4,
+        1
+      ],
+      "mrr_inr": 42490,
+      "gross_margin": 0.355,
+      "breakdown_inr": {
+        "Hosting (Render API 2c-4g)": 7934,
+        "Workers (Render 1c-2g x2)": 4667,
+        "Database (Render PG 1c-2g)": 3734,
+        "Redis (Render KV 1GB)": 1867,
+        "Scanner compute (DO 2vCPU/4GB x2)": 4481,
+        "Edge proxy (Cloudflare Workers paid)": 467,
+        "Monitoring (Sentry Team)": 2427,
+        "Storage (R2 ~50GB)": 93,
+        "Domain (.tech $50.98/yr)": 397
+      }
+    },
+    "C_SCALE": {
+      "users": 1000,
+      "cloud_scans": 8000,
+      "llm_calls": 12000,
+      "infra_usd": 914.25,
+      "infra_inr": 85342,
+      "llm_inr": 5011,
+      "total_inr": 90352,
+      "annual_inr": 1084226,
+      "cost_per_cloud_scan_inr": 11.29,
+      "cost_per_user_inr": 90.4,
+      "cost_per_llm_analysis_inr": 0.418,
+      "paying (dev,startup,growth)": [
+        40,
+        30,
+        8
+      ],
+      "mrr_inr": 329922,
+      "gross_margin": 0.706,
+      "breakdown_inr": {
+        "Hosting (Render API 2c-4g x2 + Pro workspace $25)": 18202,
+        "Workers (Render 2c-4g x4)": 31738,
+        "Database (Render PG 2c-8g)": 9335,
+        "Redis (Render KV 3GB)": 5601,
+        "Scanner compute (DO 2vCPU/4GB x6)": 13442,
+        "Edge proxy (Cloudflare Workers incl. overage est.)": 1400,
+        "Monitoring (Sentry Team + Axiom cloud)": 4761,
+        "Storage (R2 ~300GB)": 467,
+        "Domain (.tech $50.98/yr)": 397
+      }
+    }
+  },
+  "break_even": {
+    "infra_only_startup_customers": 3,
+    "with_1L_monthly_opex_startup_customers": 23,
+    "monthly_revenue_needed_infra_only": 10743,
+    "gst_example": {
+      "list_ex_gst": 4999,
+      "gst_18pct": 899.82,
+      "customer_pays": 5898.82
+    }
+  },
+  "sensitivity_B_cost_per_scan_inr": {
+    "2 scans/user": 132.84,
+    "4 scans/user": 66.42,
+    "8 scans/user": 33.21,
+    "16 scans/user": 16.61,
+    "32 scans/user": 8.3
+  },
+  "sensitivity_llm_per_call_inr_by_premium_share": {
+    "0% premium": 0.079,
+    "20% premium": 0.418,
+    "50% premium": 0.926,
+    "100% premium": 1.773
+  },
+  "marginal_cost_per_scan_inr": 0.207,
+  "scanner_box_capacity_scans_per_month": 10800
+}

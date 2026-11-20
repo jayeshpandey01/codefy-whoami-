@@ -1,0 +1,473 @@
+@import "tailwindcss";
+@import "./materials.css";
+@source "../";
+
+/* ============================================================================
+   Codefy design tokens
+   ----------------------------------------------------------------------------
+   One semantic token set, two appearances (light / dark), plus a VS Code
+   mapping that follows the editor's own theme. Values are chosen against
+   WCAG AA and verified by src/__tests__/design-tokens.test.ts -- change a
+   colour here and that test tells you if a text pair drops below 4.5:1 or a
+   control boundary below 3:1.
+
+   Light values live in @theme (so Tailwind generates utilities for them);
+   dark and VS Code values override the same variables on <html>.
+   ThemeContext sets html[data-theme="light"|"dark"] and, inside VS Code,
+   html[data-host="vscode"].
+
+   Legacy names (vscode-*, severity-*) are aliases kept so components can
+   migrate one at a time. They map to what each name actually means in the
+   code today -- e.g. severity-medium is used as the general accent, so it
+   aliases to accent, not to the medium-severity colour (use sev-medium).
+   ========================================================================== */
+
+@theme {
+  /* --- Surfaces ---------------------------------------------------------- */
+  --color-bg: #ffffff;                 /* content canvas, graph background  */
+  --color-bg-secondary: #f5f5f7;       /* sidebar, header, chat             */
+  --color-surface: #ffffff;            /* cards in content                  */
+  --color-surface-elevated: #ffffff;   /* popovers, menus, dialogs          */
+  --color-field: #ffffff;              /* text field background             */
+  --color-fill: #e8e8ed;               /* secondary buttons, segmented bg   */
+  --color-fill-hover: #dcdce1;
+  --color-hover: rgb(0 0 0 / 0.05);    /* row / plain-button hover          */
+  --color-selection: #e6f0fc;          /* selected row                      */
+  --color-separator: #d2d2d7;          /* decorative dividers               */
+  --color-control-border: #8e8e93;     /* field / control boundary, >=3:1   */
+
+  /* --- Text -------------------------------------------------------------- */
+  --color-label: #1d1d1f;
+  --color-label-secondary: #6e6e73;
+  --color-label-tertiary: #8e8e93;     /* disabled + decorative only        */
+
+  /* --- Accent (interactive) ---------------------------------------------- */
+  --color-accent: #0066cc;             /* links, icons, accent text         */
+  --color-accent-fill: #0071e3;        /* primary button fill               */
+  --color-accent-fill-hover: #0062c4;
+  --color-on-accent: #ffffff;
+  --color-focus: #0071e3;
+
+  /* --- Status ------------------------------------------------------------ */
+  --color-danger: #d70015;
+  --color-danger-bg: #fdecee;
+  --color-warning: #b25000;
+  --color-warning-bg: #fdf1e3;
+  --color-success: #1a7f37;
+  --color-success-bg: #e8f5ec;
+  --color-info: #0066cc;
+  --color-info-bg: #e6f0fc;
+
+  /* --- Severity: used ONLY for finding severity, always with a label ----- */
+  --color-sev-critical: #c4122f;
+  --color-sev-critical-bg: #fae7ea;
+  --color-sev-high: #a34a06;
+  --color-sev-high-bg: #fdf0e1;
+  --color-sev-medium: #8a5300;
+  --color-sev-medium-bg: #fbf3e2;
+  --color-sev-low: #0e7490;
+  --color-sev-low-bg: #e3f3f6;
+  --color-sev-info: #636368;
+  --color-sev-info-bg: #f0f0f2;
+
+  /* --- Graph roles and edges --------------------------------------------- */
+  --color-role-source: #5856d6;
+  --color-role-sink: #d70015;
+  --color-role-sanitizer: #1a7f37;
+  --color-role-hop: #6e6e73;
+  --color-role-boundary: #b25000;
+  --color-edge-tainted: #d70015;
+  --color-edge-safe: #1a7f37;
+  --color-edge-call: #8e8e93;
+
+  /* --- Diff and syntax --------------------------------------------------- */
+  --color-diff-add: #17732f;
+  --color-diff-add-bg: #e6f4ea;
+  --color-diff-del: #c4122f;
+  --color-diff-del-bg: #fdecee;
+  --color-syntax-keyword: #9b2393;
+  --color-syntax-string: #c41a16;
+  --color-syntax-number: #1c00cf;
+  --color-syntax-comment: #5d6c79;
+  --color-syntax-function: #326d74;
+  --color-syntax-type: #3900a0;
+
+  /* --- Legacy aliases (migrate away; do not use in new code) ------------- */
+  --color-vscode-bg: var(--color-bg);
+  --color-vscode-sidebar: var(--color-bg-secondary);
+  --color-vscode-activitybar: var(--color-bg-secondary);
+  --color-vscode-header: var(--color-bg-secondary);
+  --color-vscode-card: var(--color-surface);
+  --color-vscode-card-hover: var(--color-hover);
+  --color-vscode-card-selected: var(--color-selection);
+  --color-vscode-border: var(--color-separator);
+  --color-vscode-focus: var(--color-accent);
+  --color-vscode-primary: var(--color-accent-fill);
+  --color-vscode-primary-hover: var(--color-accent-fill-hover);
+  --color-vscode-btn-secondary: var(--color-fill);
+  --color-vscode-btn-secondary-hover: var(--color-fill-hover);
+  --color-vscode-fg: var(--color-label);
+  --color-vscode-muted: var(--color-label-secondary);
+  --color-vscode-dim: var(--color-label-secondary);
+  --color-vscode-link: var(--color-accent);
+  --color-severity-critical: var(--color-danger);
+  --color-severity-critical-bg: var(--color-danger-bg);
+  --color-severity-high: var(--color-warning);
+  --color-severity-high-bg: var(--color-warning-bg);
+  --color-severity-medium: var(--color-accent);
+  --color-severity-low: var(--color-success);
+
+  /* --- Typography (macOS text styles) ------------------------------------ */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+
+  --text-caption2: 10px;  --text-caption2--line-height: 13px;  /* graph meta, kbd */
+  --text-caption: 11px;   --text-caption--line-height: 14px;
+  --text-xs: 12px;        --text-xs--line-height: 16px;        /* callout  */
+  --text-sm: 13px;        --text-sm--line-height: 18px;        /* body     */
+  --text-base: 15px;      --text-base--line-height: 20px;      /* title 3  */
+  --text-lg: 17px;        --text-lg--line-height: 22px;        /* title 2  */
+  --text-xl: 22px;        --text-xl--line-height: 28px;        /* title 1  */
+  --text-2xl: 26px;       --text-2xl--line-height: 32px;       /* large    */
+
+  /* --- Shape ------------------------------------------------------------- */
+  --radius-xs: 2px;
+  --radius-sm: 4px;    /* badges, kbd               */
+  --radius-md: 6px;    /* buttons, fields, segments */
+  --radius-lg: 10px;   /* cards, menus, nodes       */
+  --radius-xl: 14px;   /* dialogs                   */
+  --radius-2xl: 14px;
+  --radius-3xl: 14px;
+
+  --shadow-popover: 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 8px 24px rgb(0 0 0 / 0.12);
+  --shadow-dialog: 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 24px 64px rgb(0 0 0 / 0.2);
+
+  /* --- Motion ------------------------------------------------------------ */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --default-transition-duration: 120ms;
+  --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  --animate-enter: enter 200ms cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-fade-in: fade-in 160ms cubic-bezier(0.2, 0, 0, 1) both;
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Dark appearance
+   ------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --color-bg: #1c1c1e;
+  --color-bg-secondary: #161618;
+  --color-surface: #232325;
+  --color-surface-elevated: #2c2c2e;
+  --color-field: #232325;
+  --color-fill: #3a3a3c;
+  --color-fill-hover: #48484a;
+  --color-hover: rgb(255 255 255 / 0.07);
+  --color-selection: #102a46;
+  --color-separator: #38383a;
+  --color-control-border: #6e6e73;
+
+  --color-label: #f5f5f7;
+  --color-label-secondary: #98989d;
+  --color-label-tertiary: #6e6e73;
+
+  --color-accent: #409cff;
+  --color-accent-fill: #0071e3;
+  --color-accent-fill-hover: #0062c4;
+  --color-on-accent: #ffffff;
+  --color-focus: #0a84ff;
+
+  --color-danger: #ff453a;
+  --color-danger-bg: #2b1615;
+  --color-warning: #ff9f0a;
+  --color-warning-bg: #3a2a12;
+  --color-success: #30d158;
+  --color-success-bg: #16301d;
+  --color-info: #409cff;
+  --color-info-bg: #102a46;
+
+  --color-sev-critical: #ff6961;
+  --color-sev-critical-bg: #2b1615;
+  --color-sev-high: #ff9f0a;
+  --color-sev-high-bg: #3a2a12;
+  --color-sev-medium: #ffd60a;
+  --color-sev-medium-bg: #383012;
+  --color-sev-low: #5ac8d8;
+  --color-sev-low-bg: #12313a;
+  --color-sev-info: #98989d;
+  --color-sev-info-bg: #2c2c2e;
+
+  --color-role-source: #7d7aff;
+  --color-role-sink: #ff453a;
+  --color-role-sanitizer: #30d158;
+  --color-role-hop: #98989d;
+  --color-role-boundary: #ff9f0a;
+  --color-edge-tainted: #ff453a;
+  --color-edge-safe: #30d158;
+  --color-edge-call: #6e6e73;
+
+  --color-diff-add: #30d158;
+  --color-diff-add-bg: #16301d;
+  --color-diff-del: #ff6961;
+  --color-diff-del-bg: #2b1615;
+  --color-syntax-keyword: #ff7ab2;
+  --color-syntax-string: #ff8170;
+  --color-syntax-number: #d9c97c;
+  --color-syntax-comment: #7f8c98;
+  --color-syntax-function: #67b7a4;
+  --color-syntax-type: #dabaff;
+
+  --shadow-popover: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 8px 24px rgb(0 0 0 / 0.5);
+  --shadow-dialog: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 24px 64px rgb(0 0 0 / 0.6);
+}
+
+/* Before ThemeContext runs (first paint), follow the OS so a dark-mode user
+   never sees a white flash. ThemeContext always sets data-theme, after which
+   the blocks above take over. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg: #1c1c1e;
+    --color-bg-secondary: #161618;
+    --color-label: #f5f5f7;
+    color-scheme: dark;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   VS Code: follow the editor theme. VS Code defines --vscode-* on <html>.
+   Severity, role, diff and syntax colours keep the light/dark values above
+   (ThemeContext sets data-theme from the editor's own light/dark class).
+   ------------------------------------------------------------------------- */
+:root[data-host="vscode"] {
+  --font-sans: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+  --font-mono: var(--vscode-editor-font-family, ui-monospace, Menlo, Consolas, monospace);
+
+  --color-bg: var(--vscode-editor-background);
+  --color-bg-secondary: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  --color-surface: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  --color-surface-elevated: var(--vscode-editorWidget-background, var(--vscode-menu-background));
+  --color-field: var(--vscode-input-background);
+  --color-fill: var(--vscode-button-secondaryBackground);
+  --color-fill-hover: var(--vscode-button-secondaryHoverBackground);
+  --color-hover: var(--vscode-list-hoverBackground);
+  --color-selection: var(--vscode-list-inactiveSelectionBackground);
+  --color-separator: var(--vscode-panel-border, var(--vscode-widget-border));
+  --color-control-border: var(--vscode-input-border, var(--vscode-contrastBorder, var(--vscode-widget-border)));
+
+  --color-label: var(--vscode-foreground);
+  --color-label-secondary: var(--vscode-descriptionForeground);
+  --color-label-tertiary: var(--vscode-disabledForeground);
+
+  --color-accent: var(--vscode-textLink-foreground);
+  --color-accent-fill: var(--vscode-button-background);
+  --color-accent-fill-hover: var(--vscode-button-hoverBackground);
+  --color-on-accent: var(--vscode-button-foreground);
+  --color-focus: var(--vscode-focusBorder);
+
+  --color-danger: var(--vscode-errorForeground);
+}
+
+/* ---------------------------------------------------------------------------
+   Increased contrast (OS setting, or a VS Code high-contrast theme)
+   ------------------------------------------------------------------------- */
+@media (prefers-contrast: more) {
+  :root:not([data-host="vscode"]) {
+    --color-separator: var(--color-control-border);
+    --color-label-secondary: var(--color-label);
+  }
+}
+:root[data-contrast="more"] {
+  --color-separator: var(--color-control-border);
+  --color-label-secondary: var(--color-label);
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------- */
+:root {
+  color-scheme: light dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-label);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Visible keyboard focus everywhere. Unlayered on purpose: it must win over
+   the `outline-none` / `focus:outline-none` utilities still present in older
+   components, which otherwise remove the only focus indicator. */
+:where(
+    a[href],
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]:not([tabindex="-1"]),
+    [role="button"],
+    [role="tab"],
+    [role="option"],
+    [role="menuitem"],
+    [role="menuitemradio"],
+    [role="menuitemcheckbox"],
+    [role="treeitem"],
+    [role="switch"],
+    [role="checkbox"],
+    [role="radio"],
+    [role="separator"],
+    [contenteditable="true"]
+  ):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+:where(input, textarea, select):focus-visible {
+  outline-offset: 0;
+}
+
+/* `animate-in` came from a plugin this package never installed, so the 28
+   popovers/modals that use it never animated. This shim gives them a short
+   fade (opacity only: several of them are positioned with transforms). */
+@utility animate-in {
+  animation: fade-in 160ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+/* Reduce motion: stop animations and transitions. Spinners keep turning
+   (slowly) because a frozen spinner reads as a hang. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-spin {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* React Flow ships its own CSS variables; map them onto ours so every graph
+   view follows the active appearance. */
+.react-flow {
+  --xy-background-color: var(--color-bg);
+  --xy-node-background-color: var(--color-surface);
+  --xy-node-color: var(--color-label);
+  --xy-node-border: 1px solid var(--color-separator);
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: 0 0 0 2px var(--color-focus);
+  --xy-minimap-background-color: var(--color-bg-secondary);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--color-bg-secondary) 70%, transparent);
+  --xy-minimap-node-background-color: var(--color-fill);
+  --xy-controls-button-background-color: var(--color-surface-elevated);
+  --xy-controls-button-background-color-hover: var(--color-fill);
+  --xy-controls-button-color: var(--color-label);
+  --xy-controls-button-color-hover: var(--color-label);
+  --xy-controls-button-border-color: var(--color-separator);
+  --xy-edge-label-background-color: var(--color-surface);
+  --xy-edge-label-color: var(--color-label);
+  --xy-edge-stroke: var(--color-edge-call);
+  --xy-edge-stroke-selected: var(--color-focus);
+  --xy-connectionline-stroke: var(--color-label-secondary);
+  --xy-attribution-background-color: transparent;
+}
+
+/* Clean code blocks: no per-line background strips from host stylesheets. */
+pre code,
+code {
+  background-color: transparent !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+@keyframes xyflowTaintDash {
+  from {
+    stroke-dashoffset: 28;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Scrollbars: thin, neutral, appearance-aware
+   ------------------------------------------------------------------------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-label) 22%, transparent) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-label) 22%, transparent);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-label) 40%, transparent);
+}
+
+/* Tab strip: scrollbar appears only on hover */
+.vscode-tabs-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.vscode-tabs-scrollbar:hover {
+  scrollbar-color: color-mix(in srgb, var(--color-label) 30%, transparent) transparent;
+}
+.vscode-tabs-scrollbar::-webkit-scrollbar {
+  height: 3px;
+  width: 3px;
+}
+.vscode-tabs-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border: 0;
+}
+.vscode-tabs-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-label) 30%, transparent);
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}

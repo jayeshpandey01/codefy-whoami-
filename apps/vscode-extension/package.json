@@ -1,0 +1,208 @@
+{
+  "name": "codefy-whoami",
+  "version": "0.3.1",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jayeshpandey01/codefy.git",
+    "directory": "apps/vscode-extension"
+  },
+  "publisher": "Mickey20",
+  "displayName": "Codefy",
+  "description": "Real-time taint-flow finding detection, visual attack paths, and local runtime verification inside VS Code.",
+  "icon": "icon.png",
+  "license": "SEE LICENSE IN LICENSE",
+  "keywords": [
+    "codefy",
+    "whoami",
+    "security",
+    "sast",
+    "taint",
+    "secrets",
+    "linter",
+    "vulnerability",
+    "scanner"
+  ],
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:codefy.findingsView",
+    "onCommand:codefy.scanWorkspace",
+    "onCommand:codefy.openPanel",
+    "onCommand:codefy.focusSidebar",
+    "onCommand:whoami.scanWorkspace",
+    "onCommand:whoami.openPanel"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codefy-sidebar",
+          "title": "Codefy",
+          "icon": "media/logo.svg"
+        }
+      ]
+    },
+    "views": {
+      "codefy-sidebar": [
+        {
+          "type": "webview",
+          "id": "codefy.findingsView",
+          "name": "Security Intelligence"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codefy.focusSidebar",
+        "title": "Focus Security Sidebar",
+        "category": "Codefy",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "codefy.scanWorkspace",
+        "title": "Scan Workspace for Security Findings",
+        "category": "Codefy"
+      },
+      {
+        "command": "codefy.openPanel",
+        "title": "Open Codefy Security Panel",
+        "category": "Codefy",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "codefy.setApiKey",
+        "title": "Set Operator API Key",
+        "category": "Codefy"
+      },
+      {
+        "command": "whoami.scanWorkspace",
+        "title": "Scan Workspace for Findings",
+        "category": "Codefy"
+      },
+      {
+        "command": "whoami.openPanel",
+        "title": "Open Findings Panel",
+        "category": "Codefy",
+        "icon": "$(shield)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "codefy.openPanel",
+          "group": "navigation",
+          "when": "true"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "codefy.scanWorkspace",
+          "group": "navigation",
+          "when": "view == codefy.findingsView"
+        },
+        {
+          "command": "codefy.openPanel",
+          "group": "navigation",
+          "when": "view == codefy.findingsView"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Codefy Security Orchestrator",
+      "properties": {
+        "codefy.sast.url": {
+          "type": "string",
+          "default": "https://sast.jayeshpandey754.workers.dev",
+          "description": "Base URL of the Codefy SAST microservice."
+        },
+        "codefy.dast.url": {
+          "type": "string",
+          "default": "https://dast.pandeyjayesh020.workers.dev",
+          "description": "Base URL of the Codefy DAST microservice."
+        },
+        "codefy.auth.url": {
+          "type": "string",
+          "default": "https://cmd-d-llm.vercel.app",
+          "description": "Base URL of the Codefy Authentication service."
+        },
+        "codefy.orchestrator.url": {
+          "type": "string",
+          "default": "https://sast.jayeshpandey754.workers.dev",
+          "description": "Base URL of the Authorized Scan Orchestrator service."
+        },
+        "codefy.orchestrator.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Operator API Key for submitting scans and fetching results."
+        },
+        "codefy.orchestrator.adminApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Admin API Key for target registration and audit trail inspection."
+        },
+        "whoami.orchestrator.url": {
+          "type": "string",
+          "default": "https://sast.jayeshpandey754.workers.dev",
+          "description": "Legacy fallback: Base URL of the Authorized Scan Orchestrator service."
+        },
+        "whoami.orchestrator.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Legacy fallback: Operator API Key for submitting scans and fetching results."
+        },
+        "whoami.orchestrator.adminApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Legacy fallback: Admin API Key for target registration and audit trail inspection."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -b ./tsconfig.json && node scripts/build.js",
+    "build": "tsc -b ./tsconfig.json && node scripts/build.js",
+    "dev": "node scripts/build.js --watch",
+    "type-check": "tsc -b ./tsconfig.json",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "clean": "rimraf dist out *.tsbuildinfo",
+    "package": "node scripts/package.js",
+    "package:win32-x64": "node scripts/package.js win32-x64",
+    "package:win32-arm64": "node scripts/package.js win32-arm64",
+    "package:darwin-x64": "node scripts/package.js darwin-x64",
+    "package:darwin-arm64": "node scripts/package.js darwin-arm64",
+    "package:linux-x64": "node scripts/package.js linux-x64",
+    "package:linux-arm64": "node scripts/package.js linux-arm64",
+    "package:alpine-x64": "node scripts/package.js alpine-x64"
+  },
+  "dependencies": {
+    "@ast-grep/napi": "catalog:",
+    "@whoami/core": "workspace:*",
+    "@whoami/types": "workspace:*",
+    "@whoami/ui": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tree-sitter-wasms": "^0.1.11",
+    "web-tree-sitter": "catalog:",
+    "web-tree-sitter-legacy": "npm:web-tree-sitter@0.24.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/vscode": "^1.96.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.2",
+    "rimraf": "^6.0.1",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

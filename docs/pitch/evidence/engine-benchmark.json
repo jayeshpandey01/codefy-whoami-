@@ -1,0 +1,110 @@
+{
+  "machine": "Apple M5 · 10 cores · 16 GB · node v26.8.1 · darwin 27.2.0",
+  "date": "2026-11-20T16:46:04.471Z",
+  "coldStartFirstScanMs": 27.2,
+  "fixtures": [
+    {
+      "rule": "js-code-injection",
+      "kind": "vulnerable",
+      "loc": 5,
+      "findings": 1,
+      "statuses": "confirmed",
+      "medianMs": 0.24,
+      "p95Ms": 0.61
+    },
+    {
+      "rule": "js-code-injection",
+      "kind": "safe",
+      "loc": 5,
+      "findings": 0,
+      "statuses": "-",
+      "medianMs": 0.21,
+      "p95Ms": 0.34
+    },
+    {
+      "rule": "js-command-injection-exec",
+      "kind": "vulnerable",
+      "loc": 31,
+      "findings": 1,
+      "statuses": "confirmed",
+      "medianMs": 0.34,
+      "p95Ms": 1.16
+    },
+    {
+      "rule": "js-command-injection-exec",
+      "kind": "safe",
+      "loc": 30,
+      "findings": 0,
+      "statuses": "-",
+      "medianMs": 0.3,
+      "p95Ms": 0.59
+    },
+    {
+      "rule": "js-path-traversal",
+      "kind": "vulnerable",
+      "loc": 7,
+      "findings": 1,
+      "statuses": "confirmed",
+      "medianMs": 0.23,
+      "p95Ms": 0.38
+    },
+    {
+      "rule": "js-path-traversal",
+      "kind": "safe",
+      "loc": 19,
+      "findings": 0,
+      "statuses": "-",
+      "medianMs": 0.34,
+      "p95Ms": 0.77
+    },
+    {
+      "rule": "js-sql-injection-string-concat",
+      "kind": "vulnerable",
+      "loc": 25,
+      "findings": 1,
+      "statuses": "confirmed",
+      "medianMs": 0.28,
+      "p95Ms": 0.55
+    },
+    {
+      "rule": "js-sql-injection-string-concat",
+      "kind": "safe",
+      "loc": 27,
+      "findings": 0,
+      "statuses": "-",
+      "medianMs": 0.27,
+      "p95Ms": 0.39
+    },
+    {
+      "rule": "js-ssrf-unvalidated-url",
+      "kind": "vulnerable",
+      "loc": 25,
+      "findings": 1,
+      "statuses": "confirmed",
+      "medianMs": 0.26,
+      "p95Ms": 0.44
+    },
+    {
+      "rule": "js-ssrf-unvalidated-url",
+      "kind": "safe",
+      "loc": 67,
+      "findings": 0,
+      "statuses": "-",
+      "medianMs": 0.5,
+      "p95Ms": 1.05
+    }
+  ],
+  "fixtureSummary": {
+    "vulnerableFlagged": "5/5",
+    "safeFlaggedAsActive": "0/5"
+  },
+  "codebase": {
+    "dir": "(external TS codebase)",
+    "files": 40,
+    "loc": 10116,
+    "totalMs": 124,
+    "perFileMedianMs": 2.23,
+    "perFileP95Ms": 8.21,
+    "securityFindings": 3
+  }
+}
