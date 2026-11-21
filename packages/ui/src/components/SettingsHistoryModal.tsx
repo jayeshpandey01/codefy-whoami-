@@ -239,7 +239,7 @@ export function SettingsHistoryModal({
     try {
       await onVerifyEmail(account.email, cleanCode);
       setAccountEmailVerified(true);
-      setEmailVerifySuccess("Email successfully verified! ✓");
+      setEmailVerifySuccess("Email successfully verified!");
       setTimeout(() => {
         setShowEmailVerifyBox(false);
         setEmailVerifySuccess(null);
@@ -522,7 +522,7 @@ export function SettingsHistoryModal({
         });
       }
 
-      setSaveStatus("Saved to Local Database! ✓");
+      setSaveStatus("Saved to Local Database!");
       setTimeout(() => setSaveStatus(null), 2500);
     } catch {
       setSaveStatus("Failed to save settings");
@@ -840,7 +840,7 @@ export function SettingsHistoryModal({
                     {accountEmailVerified ? (
                       <span className="flex items-center gap-1 rounded-full border border-severity-low/30 bg-severity-low/15 px-2.5 py-0.5 text-xs font-mono font-medium text-severity-low">
                         <CheckIcon size={12} />
-                        <span>Verified ✓</span>
+                        <span>Verified</span>
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 rounded-full border border-severity-high/30 bg-severity-high/15 px-2.5 py-0.5 text-xs font-mono font-medium text-severity-high">
@@ -1572,7 +1572,7 @@ export function SettingsHistoryModal({
                             onClick={() => handleCopyCodeSnippet(tip.id, tip.codeSnippet)}
                             className="rounded bg-vscode-bg border border-vscode-border px-2 py-0.5 text-caption font-mono text-vscode-muted hover:text-vscode-fg transition cursor-pointer"
                           >
-                            {copiedTipId === tip.id ? "Copied! ✓" : "Copy Snippet"}
+                            {copiedTipId === tip.id ? "Copied!" : "Copy Snippet"}
                           </button>
                         )}
                       </div>

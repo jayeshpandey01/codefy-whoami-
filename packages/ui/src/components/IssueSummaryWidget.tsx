@@ -1,5 +1,6 @@
 import React from "react";
 import type { Finding } from "@whoami/types";
+import { AlertTriangleIcon } from "./Icons.js";
 
 export interface IssueSummaryWidgetProps {
   findings: readonly Finding[];
@@ -69,8 +70,9 @@ export function IssueSummaryWidget({
 
       {slaBreached > 0 && (
         <div className="flex items-center justify-between rounded border border-[#F85149]/40 bg-[#F85149]/15 px-2.5 py-1 text-xs text-[#F85149]">
-          <span className="font-semibold text-caption tracking-wider uppercase">
-            ⚠️ SLA Policy Breach
+          <span className="font-semibold text-caption tracking-wider uppercase inline-flex items-center gap-1">
+            <AlertTriangleIcon size={12} />
+            SLA Policy Breach
           </span>
           <span className="font-mono font-bold text-caption">
             {slaBreached} {slaBreached === 1 ? "Issue" : "Issues"}

@@ -101,7 +101,7 @@ export function buildProgramSlice(
   if (downstreamImports.size > 0) {
     lines.push("#### Structural Blast Radius (Downstream):");
     for (const dep of Array.from(downstreamImports).slice(0, 4)) {
-      lines.push(`  - ⚠️ \`${dep}\` imports this module`);
+      lines.push(`  - \`${dep}\` imports this module`);
     }
     if (downstreamImports.size > 4) {
       lines.push(`  - *...and ${downstreamImports.size - 4} more files.*`);
@@ -111,7 +111,7 @@ export function buildProgramSlice(
   if (callers.size > 0) {
     lines.push("#### Caller Hierarchy:");
     for (const caller of Array.from(callers).slice(0, 3)) {
-      lines.push(`  - 📞 \`${caller}()\` calls into this scope`);
+      lines.push(`  - \`${caller}()\` calls into this scope`);
     }
   }
 

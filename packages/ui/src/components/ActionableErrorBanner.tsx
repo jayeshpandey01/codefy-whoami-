@@ -5,7 +5,9 @@ import {
   CheckIcon,
   CopyIcon,
   ExternalLinkIcon,
+  LightbulbIcon,
   RefreshCwIcon,
+  WrenchIcon,
   XIcon,
 } from "./Icons.js";
 
@@ -170,8 +172,9 @@ export function ActionableErrorBanner({
           {/* Hint / Suggestion */}
           {err.hint && (
             <div className="flex items-start gap-2 rounded bg-[#2D2214] border border-[#6B4B1B] px-2.5 py-1.5 text-caption text-[#FDE68A]">
-              <span className="shrink-0 font-semibold text-[#F59E0B]">
-                💡 Hint:
+              <span className="shrink-0 font-semibold text-[#F59E0B] inline-flex items-center gap-1">
+                <LightbulbIcon size={12} />
+                Hint:
               </span>
               <span className="break-words leading-relaxed">{err.hint}</span>
             </div>
@@ -181,8 +184,9 @@ export function ActionableErrorBanner({
           {err.fix && (
             <div className="rounded border border-[#27382B] bg-[#142017] p-2 text-caption">
               <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-[#4ADE80]">
-                  🔧 Suggested Fix:
+                <span className="font-semibold text-[#4ADE80] inline-flex items-center gap-1">
+                  <WrenchIcon size={12} />
+                  Suggested Fix:
                 </span>
                 <div className="flex items-center gap-1.5">
                   {onSignIn && (err.code === "session_expired" || /sign in/i.test(err.fix || "")) && (

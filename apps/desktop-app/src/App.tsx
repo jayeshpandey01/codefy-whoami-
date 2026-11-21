@@ -1583,6 +1583,7 @@ export function App(): ReactElement {
                   direction={layoutDirection}
                   pipelineMode={analysisPipelineMode}
                   targetFilePath={focusTargetFilePath ?? undefined}
+                  hideTestFiles={hideTestFiles}
                 />
               )}
 

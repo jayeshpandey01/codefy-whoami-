@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { memo, type ReactElement } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { SparklesIcon, ExternalLinkIcon } from "../../components/Icons.js";
 
@@ -10,14 +10,14 @@ export interface AnnotationNodeData extends Record<string, unknown> {
   readonly category?: "advisory" | "remediation" | "triage";
 }
 
-export function AnnotationNode(props: NodeProps): ReactElement {
+export const AnnotationNode = memo(function AnnotationNode(props: NodeProps): ReactElement {
   const data = props.data as AnnotationNodeData;
   const category = data.category || "advisory";
 
   return (
     <div
       className={[
-        "relative w-[260px] rounded-lg border bg-[#1E1E22]/95 p-2.5 shadow-lg backdrop-blur-md transition-colors duration-150 select-none",
+        "relative w-[260px] rounded-lg border bg-[#1E1E22] p-2.5 shadow-md transition-colors duration-150 select-none",
         category === "remediation"
           ? "border-[#4EC9B0]/60 text-vscode-fg"
           : "border-severity-high/60 text-vscode-fg",
@@ -81,4 +81,4 @@ export function AnnotationNode(props: NodeProps): ReactElement {
       />
     </div>
   );
-}
+});

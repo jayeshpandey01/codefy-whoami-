@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { memo, type ReactElement } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -24,7 +24,7 @@ const DEFAULT_STROKE = "#75BEFF";
  * with animated particle pulses indicating active taint flow.
  * Low LOD mode renders static paths without DOM label overhead.
  */
-export function TaintEdge(props: EdgeProps): ReactElement {
+export const TaintEdge = memo(function TaintEdge(props: EdgeProps): ReactElement {
   const {
     id,
     sourceX,
@@ -120,4 +120,4 @@ export function TaintEdge(props: EdgeProps): ReactElement {
       )}
     </>
   );
-}
+});

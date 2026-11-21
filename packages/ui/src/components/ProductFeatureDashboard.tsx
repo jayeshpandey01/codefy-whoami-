@@ -1,5 +1,5 @@
 import React, { useState, useId, useMemo } from "react";
-import { CodefyLogo } from "./Icons";
+import { CodefyLogo, SunIcon, MoonIcon, XIcon } from "./Icons.js";
 
 export type FeatureStatus = "GA" | "Beta" | "Experimental";
 export type FeatureCategory = "all" | "sast" | "dast" | "ai" | "topology" | "supply-chain";
@@ -387,7 +387,10 @@ export function ProductFeatureDashboard({
                 className="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer hover:scale-102"
                 aria-label="Toggle Light / Dark mode"
               >
-                <span>{isLight ? "☀️ Light Glass" : "🌙 Dark Glass"}</span>
+                <span className="inline-flex items-center gap-1.5">
+                  {isLight ? <SunIcon size={13} /> : <MoonIcon size={13} />}
+                  {isLight ? "Light Glass" : "Dark Glass"}
+                </span>
               </button>
             </div>
           )}
@@ -563,9 +566,10 @@ export function ProductFeatureDashboard({
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="text-slate-400 hover:text-slate-200 text-xs px-1"
+                  className="text-slate-400 hover:text-slate-200 text-xs px-1 flex items-center justify-center"
+                  aria-label="Clear search"
                 >
-                  ✕
+                  <XIcon size={12} />
                 </button>
               )}
             </div>
@@ -850,7 +854,7 @@ export function ProductFeatureDashboard({
                   className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer"
                   aria-label="Close feature details"
                 >
-                  ✕
+                  <XIcon size={14} />
                 </button>
               </div>
 

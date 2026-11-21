@@ -338,6 +338,11 @@ describe("isTestFilePath", () => {
     expect(isTestFilePath("tests/unit/test_widget.py")).toBe(true);
     expect(isTestFilePath("app/widget_test.go")).toBe(true);
     expect(isTestFilePath("test/fixtures/sample.py")).toBe(true);
+    expect(isTestFilePath("fixtures/mock_payload.json")).toBe(true);
+    expect(isTestFilePath("src/__mocks__/api.ts")).toBe(true);
+    expect(isTestFilePath("e2e/auth.spec.ts")).toBe(true);
+    expect(isTestFilePath("cypress/integration/test.js")).toBe(true);
+    expect(isTestFilePath("benchmarks/perf.ts")).toBe(true);
   });
 
   it("does not flag ordinary application files", () => {
@@ -353,14 +358,16 @@ describe("filterWorkspaceGraphTestFiles", () => {
       { id: "n1", label: "app.ts", type: "file", filePath: "src/app.ts" },
       { id: "n2", label: "app.test.ts", type: "file", filePath: "src/__tests__/app.test.ts" },
       { id: "n3", label: "utils.ts", type: "file", filePath: "src/utils.ts" },
+      { id: "n4", label: "fixture.json", type: "file", filePath: "fixtures/users.json" },
     ],
     edges: [
       { id: "e1", source: "n1", target: "n2", type: "imports" },
       { id: "e2", source: "n1", target: "n3", type: "imports" },
+      { id: "e3", source: "n1", target: "n4", type: "imports" },
     ],
   };
 
-  it("removes test-file nodes and any edges touching them when hideTests is true", () => {
+  it("removes test-file and noise nodes and any edges touching them when hideTests is true", () => {
     const result = filterWorkspaceGraphTestFiles(graph, true);
     expect(result?.nodes.map((n) => n.id)).toEqual(["n1", "n3"]);
     expect(result?.edges.map((e) => e.id)).toEqual(["e2"]);

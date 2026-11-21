@@ -1,11 +1,11 @@
-import { useState, type ReactElement } from "react";
+import { memo, useState, type ReactElement } from "react";
 import { Handle, Position, NodeToolbar, type NodeProps } from "@xyflow/react";
 import type { TaintNodeData } from "./SourceNode.js";
 import { AlertTriangleIcon } from "../../components/Icons.js";
 import { NodeInfoCard } from "./NodeInfoCard.js";
 import { useGraphLod } from "../useGraphLod.js";
 
-export function SinkNode(props: NodeProps): ReactElement {
+export const SinkNode = memo(function SinkNode(props: NodeProps): ReactElement {
   const [isHovered, setIsHovered] = useState(false);
   const { isLowLod } = useGraphLod();
   const data = props.data as TaintNodeData;
@@ -153,4 +153,4 @@ export function SinkNode(props: NodeProps): ReactElement {
       </div>
     </div>
   );
-}
+});

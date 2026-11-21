@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { type Finding, deduplicateFindings } from "@whoami/types";
 import {
+  CheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   CodefyLogo,
   FolderIcon,
+  GlobeIcon,
   LockIcon,
   MenuIcon,
   PanelLeftIcon,
@@ -627,8 +629,9 @@ export function IssueTreeSidebar({
 
                   <div className="flex items-center gap-2 pl-3 w-full min-w-0 mt-0.5">
                     {isOrch ? (
-                      <span className="rounded bg-severity-low/15 border border-severity-low/30 px-1 text-caption font-mono text-severity-low truncate">
-                        🌐 {fileBasename}
+                      <span className="rounded bg-severity-low/15 border border-severity-low/30 px-1 text-caption font-mono text-severity-low truncate inline-flex items-center gap-1">
+                        <GlobeIcon size={11} className="shrink-0" />
+                        {fileBasename}
                       </span>
                     ) : groupingMode !== "file" ? (
                       <span className="font-mono text-caption text-vscode-muted truncate">
@@ -796,7 +799,7 @@ export function IssueTreeSidebar({
                   </div>
                   {(sectionFilter === "local" ||
                     sectionFilter === "local-offline" ||
-                    sectionFilter === "code") && <span className="text-vscode-focus font-bold">✓</span>}
+                    sectionFilter === "code") && <CheckIcon size={12} className="text-vscode-focus" />}
                 </button>
 
                 <button
@@ -815,7 +818,7 @@ export function IssueTreeSidebar({
                     <ShieldCheckIcon size={12} className="text-severity-medium" />
                     <span>Cloud SAST</span>
                   </div>
-                  {sectionFilter === "cloud-sast" && <span className="text-vscode-focus font-bold">✓</span>}
+                  {sectionFilter === "cloud-sast" && <CheckIcon size={12} className="text-vscode-focus" />}
                 </button>
 
                 <button
@@ -839,7 +842,7 @@ export function IssueTreeSidebar({
                   </div>
                   {(sectionFilter === "orchestrator" ||
                     sectionFilter === "target-dast" ||
-                    sectionFilter === "endpoint") && <span className="text-vscode-focus font-bold">✓</span>}
+                    sectionFilter === "endpoint") && <CheckIcon size={12} className="text-vscode-focus" />}
                 </button>
 
                 <button
@@ -859,7 +862,7 @@ export function IssueTreeSidebar({
                     <ShieldCheckIcon size={12} className="text-vscode-fg" />
                     <span>All Issues ({findings.length})</span>
                   </div>
-                  {sectionFilter === "all" && <span className="text-vscode-focus font-bold">✓</span>}
+                  {sectionFilter === "all" && <CheckIcon size={12} className="text-vscode-focus" />}
                 </button>
 
                 {/* 2. Grouping Mode Section */}
@@ -883,7 +886,7 @@ export function IssueTreeSidebar({
                     }`}
                   >
                     <span>By {mode.charAt(0).toUpperCase() + mode.slice(1)}</span>
-                    {groupingMode === mode && <span className="text-vscode-focus font-bold">✓</span>}
+                    {groupingMode === mode && <CheckIcon size={12} className="text-vscode-focus" />}
                   </button>
                 ))}
 

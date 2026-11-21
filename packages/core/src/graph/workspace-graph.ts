@@ -320,7 +320,7 @@ export function buildWorkspaceGraph(
           nodeIds.add(dirId);
           nodes.push({
             id: dirId,
-            label: `📁 ${part}/`,
+            label: `${part}/`,
             type: "directory",
             filePath: currentPath,
           });
@@ -406,7 +406,7 @@ export function buildWorkspaceGraph(
           nodeIds.add(sym.id);
           nodes.push({
             id: sym.id,
-            label: sym.type === "class" ? `🔷 ${sym.name}` : `ƒ ${sym.name}()`,
+            label: sym.type === "class" ? sym.name : `${sym.name}()`,
             type: sym.type,
             filePath: absFile,
             line: sym.line,

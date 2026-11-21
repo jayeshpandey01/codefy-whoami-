@@ -88,6 +88,17 @@ const IGNORED_DIR_NAMES = new Set([
   "__pycache__",
   "site-packages",
   ".tox",
+  // Test fixture, mock, e2e, and benchmark noise directories
+  "__mocks__",
+  "fixtures",
+  "__fixtures__",
+  "test-fixtures",
+  "testdata",
+  "e2e",
+  "cypress",
+  "playwright",
+  ".storybook",
+  "benchmarks",
 ]);
 
 /**

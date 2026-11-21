@@ -1,11 +1,51 @@
-import { useState, type ReactElement } from "react";
+import { memo, useState, type ReactElement } from "react";
 import { Handle, Position, NodeToolbar, type NodeProps } from "@xyflow/react";
 import type { TaintNodeData } from "./SourceNode.js";
-import { RefreshCwIcon } from "../../components/Icons.js";
+import {
+  BoxIcon,
+  FileCodeIcon,
+  FolderIcon,
+  FunctionIcon,
+  RefreshCwIcon,
+} from "../../components/Icons.js";
 import { NodeInfoCard } from "./NodeInfoCard.js";
 import { useGraphLod } from "../useGraphLod.js";
 
-export function PassthroughNode(props: NodeProps): ReactElement {
+function getNodeRoleDetails(role?: string, type?: string): {
+  icon: ReactElement;
+  title: string;
+} {
+  const r = role || type || "";
+  switch (r) {
+    case "directory":
+      return {
+        icon: <FolderIcon size={11} className="text-severity-high" />,
+        title: "Directory",
+      };
+    case "file":
+      return {
+        icon: <FileCodeIcon size={11} className="text-[#4EC9B0]" />,
+        title: "Source File",
+      };
+    case "class":
+      return {
+        icon: <BoxIcon size={11} className="text-[#4EC9B0]" />,
+        title: "Class Definition",
+      };
+    case "function":
+      return {
+        icon: <FunctionIcon size={11} className="text-[#DCDCAA]" />,
+        title: "Function",
+      };
+    default:
+      return {
+        icon: <RefreshCwIcon size={11} className="text-vscode-muted" />,
+        title: "Propagation Hop",
+      };
+  }
+}
+
+export const PassthroughNode = memo(function PassthroughNode(props: NodeProps): ReactElement {
   const [isHovered, setIsHovered] = useState(false);
   const { isLowLod } = useGraphLod();
   const data = props.data as TaintNodeData;
@@ -15,44 +55,48 @@ export function PassthroughNode(props: NodeProps): ReactElement {
 
   const isDimmed = data.isDimmed;
   const isHighlighted = data.isHighlighted;
+  const cleanLabel = (data.label || "").replace(/^[📁🔷\s]+/, "");
+  const role = (data.role as string) || props.type;
+  const { icon, title } = getNodeRoleDetails(role, props.type);
 
   if (isLowLod) {
     return (
       <div
         className={[
-          "relative w-[230px] rounded border bg-vscode-card px-2 py-1 select-none",
+          "relative w-[230px] rounded border bg-vscode-card px-2 py-1 select-none pointer-events-none flex items-center gap-1.5",
           isHighlighted
             ? "border-severity-medium ring-2 ring-severity-medium"
             : "border-vscode-border",
           isDimmed ? "opacity-35" : "opacity-100",
         ].join(" ")}
       >
+        <span className="shrink-0">{icon}</span>
         <div className="truncate text-xs font-mono text-vscode-fg">
-          {data.label}
+          {cleanLabel}
         </div>
         <Handle
           type="target"
           position={Position.Left}
           id="left"
-          className="!bg-vscode-dim !w-1.5 !h-1.5 !border-none"
+          className="!bg-vscode-dim !w-1 !h-1 !border-none !opacity-0"
         />
         <Handle
           type="target"
           position={Position.Top}
           id="top"
-          className="!bg-vscode-dim !w-1.5 !h-1.5 !border-none"
+          className="!bg-vscode-dim !w-1 !h-1 !border-none !opacity-0"
         />
         <Handle
           type="source"
           position={Position.Right}
           id="right"
-          className="!bg-vscode-dim !w-1.5 !h-1.5 !border-none"
+          className="!bg-vscode-dim !w-1 !h-1 !border-none !opacity-0"
         />
         <Handle
           type="source"
           position={Position.Bottom}
           id="bottom"
-          className="!bg-vscode-dim !w-1.5 !h-1.5 !border-none"
+          className="!bg-vscode-dim !w-1 !h-1 !border-none !opacity-0"
         />
       </div>
     );
@@ -79,8 +123,8 @@ export function PassthroughNode(props: NodeProps): ReactElement {
         className="z-50 pointer-events-auto !p-0 !bg-transparent !border-none !shadow-none"
       >
         <NodeInfoCard
-          data={data}
-          type="passthrough"
+          data={{ ...data, label: cleanLabel }}
+          type={role}
           selected={props.selected}
           onClose={() => setIsHovered(false)}
         />
@@ -101,21 +145,21 @@ export function PassthroughNode(props: NodeProps): ReactElement {
       />
 
       <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-1">
-          <RefreshCwIcon size={11} className="text-vscode-muted" />
+        <div className="flex items-center gap-1.5">
+          {icon}
           <span className="text-caption2 font-bold uppercase tracking-wider text-vscode-muted">
-            Propagation Hop
+            {title}
           </span>
         </div>
       </div>
 
-      <div className="truncate text-xs font-mono text-vscode-fg" title={data.label}>
-        {data.label}
+      <div className="truncate text-xs font-mono text-vscode-fg" title={cleanLabel}>
+        {cleanLabel}
       </div>
 
       <div className="flex items-center justify-between mt-1 text-caption2 font-mono text-vscode-muted">
         <span className="truncate max-w-[160px]" title={data.filePath}>
-          {fileBasename}:{data.line}
+          {fileBasename}:{data.line || 1}
         </span>
       </div>
 
@@ -134,4 +178,4 @@ export function PassthroughNode(props: NodeProps): ReactElement {
       />
     </div>
   );
-}
+});

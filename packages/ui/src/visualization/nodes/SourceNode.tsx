@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from "react";
+import { memo, useState, type ReactElement } from "react";
 import { Handle, Position, NodeToolbar, type NodeProps } from "@xyflow/react";
 import { RadioIcon } from "../../components/Icons.js";
 import { NodeInfoCard } from "./NodeInfoCard.js";
@@ -18,7 +18,7 @@ export interface TaintNodeData extends Record<string, unknown> {
   readonly onApplyFix?: () => void;
 }
 
-export function SourceNode(props: NodeProps): ReactElement {
+export const SourceNode = memo(function SourceNode(props: NodeProps): ReactElement {
   const [isHovered, setIsHovered] = useState(false);
   const { isLowLod } = useGraphLod();
   const data = props.data as TaintNodeData;
@@ -152,4 +152,4 @@ export function SourceNode(props: NodeProps): ReactElement {
       />
     </div>
   );
-}
+});

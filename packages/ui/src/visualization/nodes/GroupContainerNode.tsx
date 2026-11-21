@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from "react";
+import { memo, useState, type ReactElement } from "react";
 import { type NodeProps } from "@xyflow/react";
 import { ChevronDownIcon, FileCodeIcon } from "../../components/Icons.js";
 
@@ -10,7 +10,7 @@ export interface GroupNodeData extends Record<string, unknown> {
   readonly onToggleCollapse?: (groupId: string, collapsed: boolean) => void;
 }
 
-export function GroupContainerNode(props: NodeProps): ReactElement {
+export const GroupContainerNode = memo(function GroupContainerNode(props: NodeProps): ReactElement {
   const data = props.data as GroupNodeData;
   const [collapsed, setCollapsed] = useState(false);
 
@@ -24,7 +24,7 @@ export function GroupContainerNode(props: NodeProps): ReactElement {
   return (
     <div
       className={[
-        "h-full w-full rounded-xl border bg-vscode-header/70 p-3 shadow-inner backdrop-blur-md transition-colors duration-150 pointer-events-auto select-none",
+        "h-full w-full rounded-xl border bg-vscode-header/90 p-3 shadow-inner transition-colors duration-150 pointer-events-auto select-none",
         props.selected
           ? "border-vscode-focus ring-1 ring-vscode-focus/50"
           : hasIssues
@@ -85,4 +85,4 @@ export function GroupContainerNode(props: NodeProps): ReactElement {
       </div>
     </div>
   );
-}
+});

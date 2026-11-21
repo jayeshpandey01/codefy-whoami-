@@ -4,11 +4,11 @@ import type { FitViewOptions } from "@xyflow/react";
  * Standard minimum and maximum zoom boundaries for all graph visualizers.
  *
  * React Flow defaults to [0.5, 2.0], which severely limits architectural
- * overviews of large codebases. Expanding to [0.05, 4.0] allows:
- *  - 10x deeper zoom out (5%) to inspect large architectures and dependency trees
+ * overviews of large codebases. Bounding to [0.15, 4.0] allows:
+ *  - High-performance overview zoom out (15%) without GPU fillrate / DOM sub-pixel thrashing
  *  - 2x deeper zoom in (400%) to inspect syntax tokens, parameters, and taint flows
  */
-export const GRAPH_MIN_ZOOM = 0.05;
+export const GRAPH_MIN_ZOOM = 0.15;
 export const GRAPH_MAX_ZOOM = 4.0;
 
 /** Default overview zoom level (30%). */
@@ -16,6 +16,10 @@ export const GRAPH_DEFAULT_ZOOM = 0.30;
 
 /** Level-of-detail threshold: below this zoom, render lightweight low-overhead nodes & edges. */
 export const LOD_COMPACT_ZOOM_THRESHOLD = 0.45;
+
+/** Hysteresis thresholds to prevent flapping/looping re-renders when zoom hovers near 0.45 */
+export const LOD_LOW_ENTER_THRESHOLD = 0.38;
+export const LOD_LOW_EXIT_THRESHOLD = 0.46;
 
 /** Default animation duration for zoom and fitView actions (ms). */
 export const GRAPH_ZOOM_TRANSITION_MS = 250;
@@ -39,4 +43,3 @@ export function clampZoom(zoom: number): number {
   if (!Number.isFinite(zoom)) return 1.0;
   return Math.min(Math.max(zoom, GRAPH_MIN_ZOOM), GRAPH_MAX_ZOOM);
 }
-

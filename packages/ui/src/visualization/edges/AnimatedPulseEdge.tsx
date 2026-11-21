@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { memo, type ReactElement } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -12,7 +12,7 @@ import { useGraphLod } from "../useGraphLod.js";
  * Dedicated particle pulse edge: animates a luminous packet traversing the path from source to sink.
  * Automatically switches to lightweight static vector rendering at low zoom levels to preserve 60fps.
  */
-export function AnimatedPulseEdge(props: EdgeProps): ReactElement {
+export const AnimatedPulseEdge = memo(function AnimatedPulseEdge(props: EdgeProps): ReactElement {
   const {
     id,
     sourceX,
@@ -99,4 +99,4 @@ export function AnimatedPulseEdge(props: EdgeProps): ReactElement {
       )}
     </>
   );
-}
+});

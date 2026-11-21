@@ -72,9 +72,9 @@ function getDirname(filePath: string): string {
 
 /**
  * Universal Command Palette and Quick-Search Dialog for searching:
- * 1. 📁 Folders across the repository
- * 2. 📄 Files with finding counts
- * 3. 🚨 Security Issues, CWEs, and vulnerability findings
+ * 1. Folders across the repository
+ * 2. Files with finding counts
+ * 3. Security Issues, CWEs, and vulnerability findings
  */
 export function QuickSearchModal({
   isOpen,

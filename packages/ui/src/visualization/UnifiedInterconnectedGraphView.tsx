@@ -40,6 +40,7 @@ import {
 } from "./zoom-config.js";
 import { GraphZoomControls } from "./GraphZoomControls.js";
 import { GraphFocusHelper } from "./GraphFocusHelper.js";
+import { GraphErrorBoundary } from "./GraphErrorBoundary.js";
 
 const nodeTypes: NodeTypes = {
   source: SourceNode,
@@ -69,6 +70,7 @@ export interface UnifiedInterconnectedGraphViewProps {
   readonly direction?: "DOWN" | "RIGHT";
   readonly pipelineMode?: "bugs" | "full";
   readonly targetFilePath?: string;
+  readonly hideTestFiles?: boolean;
 }
 
 export function UnifiedInterconnectedGraphView({
@@ -79,6 +81,7 @@ export function UnifiedInterconnectedGraphView({
   direction = "DOWN",
   pipelineMode = "full",
   targetFilePath,
+  hideTestFiles = true,
 }: UnifiedInterconnectedGraphViewProps): ReactElement {
   // React Flow's own built-in dark/light chrome (canvas background,
   // minimap, controls, connection lines) is independent of our
@@ -96,8 +99,11 @@ export function UnifiedInterconnectedGraphView({
   }, [findings, filterSeverity]);
 
   const { nodes: unifiedNodes, edges: unifiedEdges } = useMemo(() => {
-    return buildUnifiedInterconnectedGraph(workspaceGraph, filteredFindings, { pipelineMode });
-  }, [workspaceGraph, filteredFindings, pipelineMode]);
+    return buildUnifiedInterconnectedGraph(workspaceGraph, filteredFindings, {
+      pipelineMode,
+      hideTests: hideTestFiles,
+    });
+  }, [workspaceGraph, filteredFindings, pipelineMode, hideTestFiles]);
 
   // Focus and select node matching targetFilePath (e.g. from Quick Search)
   useEffect(() => {
@@ -325,46 +331,50 @@ export function UnifiedInterconnectedGraphView({
         )}
       </div>
 
-      <ReactFlow
-        nodes={flowNodes}
-        edges={flowEdges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        onNodeClick={handleNodeClick}
-        onPaneClick={() => setActiveNodeId(null)}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable
-        onlyRenderVisibleElements={false}
-        colorMode={reactFlowColorMode}
-        minZoom={GRAPH_MIN_ZOOM}
-        maxZoom={GRAPH_MAX_ZOOM}
-        defaultViewport={{ x: 0, y: 0, zoom: GRAPH_DEFAULT_ZOOM }}
-        fitView
-        fitViewOptions={GRAPH_DEFAULT_FIT_VIEW_OPTIONS}
-        zoomOnScroll={true}
-        zoomOnPinch={true}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background color="var(--color-vscode-border)" gap={20} />
-        <GraphZoomControls position="bottom-left" />
-        <GraphFocusHelper targetNodeId={activeNodeId} />
-        <MiniMap
-          position="top-right"
-          nodeStrokeWidth={3}
-          nodeColor={(n) => {
-            if (n.type === "source") return "#75BEFF";
-            if (n.type === "sink") return "#F14C4C";
-            if (n.type === "sanitizer") return "#89D185";
-            if (n.type === "function") return "#DCDCAA";
-            if (n.type === "file") return "#4EC9B0";
-            return "#3C3C3C";
-          }}
-          maskColor="rgba(30, 30, 30, 0.75)"
-          className="!border-vscode-border !bg-vscode-card !rounded-md !shadow-md !mt-2.5 !mr-2.5"
-          style={{ width: 140, height: 90 }}
-        />
-      </ReactFlow>
+      <GraphErrorBoundary onReset={() => setActiveNodeId(null)}>
+        <ReactFlow
+          nodes={flowNodes}
+          edges={flowEdges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onNodeClick={handleNodeClick}
+          onPaneClick={() => setActiveNodeId(null)}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable
+          onlyRenderVisibleElements={true}
+          colorMode={reactFlowColorMode}
+          minZoom={GRAPH_MIN_ZOOM}
+          maxZoom={GRAPH_MAX_ZOOM}
+          defaultViewport={{ x: 0, y: 0, zoom: GRAPH_DEFAULT_ZOOM }}
+          fitView
+          fitViewOptions={GRAPH_DEFAULT_FIT_VIEW_OPTIONS}
+          zoomOnScroll={true}
+          zoomOnPinch={true}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background color="var(--color-vscode-border)" gap={20} />
+          <GraphZoomControls position="bottom-left" />
+          <GraphFocusHelper targetNodeId={activeNodeId} />
+          {flowNodes.length <= 250 && (
+            <MiniMap
+              position="top-right"
+              nodeStrokeWidth={3}
+              nodeColor={(n) => {
+                if (n.type === "source") return "#75BEFF";
+                if (n.type === "sink") return "#F14C4C";
+                if (n.type === "sanitizer") return "#89D185";
+                if (n.type === "function") return "#DCDCAA";
+                if (n.type === "file") return "#4EC9B0";
+                return "#3C3C3C";
+              }}
+              maskColor="rgba(30, 30, 30, 0.75)"
+              className="!border-vscode-border !bg-vscode-card !rounded-md !shadow-md !mt-2.5 !mr-2.5"
+              style={{ width: 140, height: 90 }}
+            />
+          )}
+        </ReactFlow>
+      </GraphErrorBoundary>
     </div>
   );
 }

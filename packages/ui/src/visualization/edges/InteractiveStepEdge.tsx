@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { memo, type ReactElement } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -18,7 +18,7 @@ export interface InteractiveEdgeData extends Record<string, unknown> {
 /**
  * Interactive edge pattern from xyflow with interactive inspect/filter button rendered on the label.
  */
-export function InteractiveStepEdge(props: EdgeProps): ReactElement {
+export const InteractiveStepEdge = memo(function InteractiveStepEdge(props: EdgeProps): ReactElement {
   const {
     id,
     sourceX,
@@ -105,4 +105,4 @@ export function InteractiveStepEdge(props: EdgeProps): ReactElement {
       </EdgeLabelRenderer>
     </>
   );
-}
+});

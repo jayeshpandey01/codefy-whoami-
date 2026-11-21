@@ -4,6 +4,7 @@
 import "./styles/tailwind.css";
 
 export * from "./visualization/GraphContainer.js";
+export * from "./visualization/GraphErrorBoundary.js";
 export * from "./visualization/UnifiedInterconnectedGraphView.js";
 export * from "./visualization/BlastRadiusGraphView.js";
 export * from "./visualization/ControlFlowGraphView.js";

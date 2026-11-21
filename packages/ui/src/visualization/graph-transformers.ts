@@ -7,16 +7,17 @@ import type {
   WorkspaceGraph,
 } from "@whoami/types";
 
-/** Common test-file/test-directory path conventions across the languages
- * this app scans (JS/TS, Python, Go, Java, Rust, Ruby, etc.). Used to filter
- * the "Whole Code" architecture graphs, where test suites otherwise often
- * dominate the node count relative to actual application code. */
+/** Common test-file/test-directory/mock/fixture path conventions across languages
+ * (JS/TS, Python, Go, Java, Rust, Ruby, etc.). Used to filter noise from
+ * architecture and taint graphs, where test/mock suites otherwise dominate the node count. */
 const TEST_PATH_PATTERN =
-  /(^|[/\\])(tests?|__tests__|__mocks__|spec|specs)([/\\]|$)|[._-](test|spec)s?\.[a-z0-9]+$|_test\.[a-z0-9]+$/i;
+  /(^|[/\\])(tests?|__tests__|__mocks__|mocks|fixtures|__fixtures__|test-fixtures|testdata|spec|specs|e2e|cypress|playwright|\.storybook|stories|benchmarks|examples|samples|demo)([/\\]|$)|[._-](test|spec)s?\.[a-z0-9]+$|_test\.[a-z0-9]+$/i;
 
 export function isTestFilePath(filePath: string): boolean {
   return TEST_PATH_PATTERN.test(filePath.replace(/\\/g, "/"));
 }
+
+export const isNoiseOrTestFilePath = isTestFilePath;
 
 /**
  * Removes test-file nodes (and any edges touching them) from a workspace
@@ -237,21 +238,28 @@ export function findingsToInterconnectedGraph(
 export function buildUnifiedInterconnectedGraph(
   workspaceGraph: WorkspaceGraph | undefined,
   findings: readonly Finding[],
-  options: { pipelineMode?: "bugs" | "full" } = {},
+  options: { pipelineMode?: "bugs" | "full"; hideTests?: boolean } = {},
 ): {
   nodes: GraphNode[];
   edges: GraphEdge[];
 } {
-  const { pipelineMode = "full" } = options;
+  const { pipelineMode = "full", hideTests = true } = options;
+  const effectiveGraph = hideTests
+    ? filterWorkspaceGraphTestFiles(workspaceGraph, true)
+    : workspaceGraph;
+  const effectiveFindings = hideTests
+    ? findings.filter((f) => !f.trace?.steps.some((s) => isTestFilePath(s.filePath)))
+    : findings;
+
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
   const nodeIds = new Set<string>();
   const edgeIds = new Set<string>();
 
-  // Pre-index functions in workspaceGraph by file path for fast O(1) connection
-  const functionsByFile = new Map<string, typeof workspaceGraph extends undefined ? never : NonNullable<typeof workspaceGraph>["nodes"][number][]>();
-  if (workspaceGraph) {
-    for (const n of workspaceGraph.nodes) {
+  // Pre-index functions in effectiveGraph by file path for fast O(1) connection
+  const functionsByFile = new Map<string, typeof effectiveGraph extends undefined ? never : NonNullable<typeof effectiveGraph>["nodes"][number][]>();
+  if (effectiveGraph) {
+    for (const n of effectiveGraph.nodes) {
       if (n.type === "function" && n.filePath && n.line !== undefined) {
         const norm = n.filePath.replace(/\\/g, "/");
         const list = functionsByFile.get(norm) ?? [];
@@ -262,11 +270,11 @@ export function buildUnifiedInterconnectedGraph(
   }
 
   // 1. Add architecture nodes
-  if (workspaceGraph) {
+  if (effectiveGraph) {
     const archNodes =
       pipelineMode === "bugs"
-        ? workspaceGraph.nodes.filter((n) => (n.findingCount ?? 0) > 0)
-        : workspaceGraph.nodes;
+        ? effectiveGraph.nodes.filter((n) => (n.findingCount ?? 0) > 0)
+        : effectiveGraph.nodes;
 
     for (const archNode of archNodes) {
       if (!nodeIds.has(archNode.id)) {
@@ -286,7 +294,7 @@ export function buildUnifiedInterconnectedGraph(
       }
     }
 
-    for (const archEdge of workspaceGraph.edges) {
+    for (const archEdge of effectiveGraph.edges) {
       if (nodeIds.has(archEdge.source) && nodeIds.has(archEdge.target)) {
         edgeIds.add(archEdge.id);
         edges.push({
@@ -302,7 +310,7 @@ export function buildUnifiedInterconnectedGraph(
   }
 
   // 2. Add taint flow nodes and connect to their parent function/file
-  const taintGraph = findingsToInterconnectedGraph(findings, {
+  const taintGraph = findingsToInterconnectedGraph(effectiveFindings, {
     groupByFile: false,
     showAnnotations: false,
   });
@@ -314,10 +322,10 @@ export function buildUnifiedInterconnectedGraph(
     }
 
     // Connect architecture node (File or Function) to the taint node
-    if (workspaceGraph) {
+    if (effectiveGraph) {
       const normalizedFile = tNode.filePath.replace(/\\/g, "/");
       const funcsInFile = functionsByFile.get(normalizedFile);
-      let matchedFunction: NonNullable<typeof workspaceGraph>["nodes"][number] | undefined;
+      let matchedFunction: NonNullable<typeof effectiveGraph>["nodes"][number] | undefined;
       if (funcsInFile) {
         for (const fn of funcsInFile) {
           if (fn.line !== undefined && Math.abs(fn.line - tNode.line) <= 25) {

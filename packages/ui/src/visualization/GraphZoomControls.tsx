@@ -27,7 +27,7 @@ export interface GraphZoomControlsProps {
  *  - Zoom out (-) button
  *  - Real-time zoom level badge (e.g. "100%", "45%"), clickable to reset to 100%
  *  - Real-time zoom level badge (e.g. "30%", "100%"), clickable to reset to default 30%
- *  - Fit-to-screen (⛶) button
+ *  - Fit-to-screen button
  *  - Smooth easing animations
  *  - Fully styled to match VS Code dark theme
  */

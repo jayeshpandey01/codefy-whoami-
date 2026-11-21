@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { memo, type ReactElement } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { ChevronDownIcon, RefreshCwIcon } from "../../components/Icons.js";
 
@@ -10,7 +10,7 @@ export interface HopsClusterData extends Record<string, unknown> {
   readonly isDimmed?: boolean;
 }
 
-export function HopsClusterNode(props: NodeProps): ReactElement {
+export const HopsClusterNode = memo(function HopsClusterNode(props: NodeProps): ReactElement {
   const data = props.data as HopsClusterData;
   const fileBasename = data.filePath
     ? data.filePath.split(/[/\\]/).pop() || data.filePath
@@ -74,4 +74,4 @@ export function HopsClusterNode(props: NodeProps): ReactElement {
       />
     </div>
   );
-}
+});
