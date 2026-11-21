@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/jayeshpandey01/codefy-whoami-/compare/v0.3.0...v0.3.1) (2026-11-21)
+
+
+### Bug Fixes
+
+* **ci:** resolve eslint errors, vitest config, and typecheck issues ([91392a5](https://github.com/jayeshpandey01/codefy-whoami-/commit/91392a57030d39a03d6f0cc99c394dc7ecb7950c))
+* **graph:** prevent zoom crash with LOD hysteresis & replace emojis with lightweight SVG icons ([30e8b42](https://github.com/jayeshpandey01/codefy-whoami-/commit/30e8b42ca2663039689533c1e640da5f94c86f3b))
+
 ## [0.3.0](https://github.com/jayeshpandey01/codefy/compare/v0.2.0...v0.3.0) (2026-10-06)
 
 ### Features
